@@ -35,15 +35,19 @@ Mateo Robbins ([mjrobbins\@ucsb.edu](mailto:mjrobbins@ucsb.edu){.email})
 
 ## Important links
 
--   [Link to full course syllabus](https://docs.google.com/document/d/1FQcNBYLAgTiL31azyvMZH336kKxfqqWGs64U6H-_Wcg/edit?usp=sharing)
+-   [Link to full course syllabus](https://docs.google.com/document/d/1BxkLEt02rBUl-HcfM7J0rfu0XpnPBOInKAsGBIz2fqc/edit?usp=sharing)
 
 ## Weekly course schedule
 
--   **Lectures:** M 9:30 - 10:45am, W (NCEAS Classroom)
+-   **Lectures:** NCEAS classroom
+
+    M 12:30pm -1:45pm  
+
+    W 11:00am - 12:15pm
 
 ## Learning objectives
 
-The goal of EDS 231 (Text and Sentiment Analysis for Environmental Problems) is to expose students to a range of text and sentiment analysis data sources, techniques and tools for analysis that can be applied to environmental problems. During this course, students will:
+The goal of EDS 231 (Text and Sentiment Analysis for Environmental Problems) is to expose students to a range of text and sentiment analysis data sources, techniques and tools that can be applied to environmental problems. During this course, students will:
 
 -   Become familiar with the R packages used in text-as-data applications
 
@@ -68,7 +72,7 @@ The goal of EDS 231 (Text and Sentiment Analysis for Environmental Problems) is 
 ## Tentative topics
 
 | Week | Session | Lecture                                 | Reading | Assignment |
-|------------|-------------|------------------|------------------|------------------|
+|---------------|---------------|---------------|---------------|---------------|
 | 1    | 4/03    | Course Intro and Text Analysis Overview | \-      | \-         |
 |      | 4/05    | Text Data in R                          |         | Lab 1      |
 | 2    | 4/10    | Word relationship analysis              |         |            |
