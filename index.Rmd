@@ -15,11 +15,11 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ```
 
-```{r, out.width = "100%", fig.cap = "We are awash in a sea of text."}
+```{r, out.width = "100%", fig.cap = "Text and sentiment analysis for environmental problems"}
 
 # UPDATE IMAGE HERE
 # or copy/paste this code elsewhere, updating the file path, to add other images to your site!
-#knitr::include_graphics("img/stamp_letters.jpeg")
+knitr::include_graphics("img/homepage-header.png")
 ```
 
 ## Course description
