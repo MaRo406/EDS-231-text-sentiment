@@ -31,7 +31,7 @@ This course will cover foundations and applications of natural language processi
 Mateo Robbins ([mjrobbins\@ucsb.edu](mailto:mjrobbins@ucsb.edu){.email})
 
 -   **Office:** MEDS Group Office
--   **Office hours:** Wednesday 11:00 - 12:00
+-   **Office hours:** Monday 1:45pm -2:45pm
 
 ## Important links
 
@@ -66,22 +66,22 @@ The goal of EDS 231 (Text and Sentiment Analysis for Environmental Problems) is 
 ### Textbook
 
 -   Readings will be drawn from free online ebooks:
-    -   [Text Mining with R](https://www.tidytextmining.com/)
-    -   [Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
+    -   [Text Mining with R](https://www.tidytextmining.com/) (TMR)
+    -   [Supervised Machine Learning for Text Analysis in R](https://smltar.com/) (SMLTAR)
 
 ## Tentative topics
 
-| Week | Session | Lecture                                 | Reading | Assignment |
-|---------------|---------------|---------------|---------------|---------------|
-| 1    | 4/03    | Course Intro and Text Analysis Overview | \-      | \-         |
-|      | 4/05    | Text Data in R                          |         | Lab 1      |
-| 2    | 4/10    | Word relationship analysis              |         |            |
-|      | 4/12    | Topic analysis                          |         | Lab 2      |
-| 3    | 4/17    | Classification Lecture                  |         |            |
-|      | 4/19    | Classification                          |         | Lab 3      |
-| 4    | Break   |                                         |         |            |
-|      | Break   |                                         |         |            |
-| 5    | 5/01    | Sentiment analysis I                    |         |            |
-|      | 5/03    | Lab 4                                   |         | Lab 4      |
-| 6    | 5/08    | Sentiment analysis II                   |         |            |
-|      | 5/10    | Lab 5                                   |         | Lab 5      |
+| Week | Session | Lecture                                                                                            | Reading                                                                                                          | Assignment           |
+|-------------|-------------|-----------------------|-------------|-------------|
+| 1    | 4/03    | [Course Intro and Text Analysis Overview](https://ucsb.box.com/s/3jokarrb3xo1ksts137aeu45pm5q96q5) |                                                                                                                  | ChatGPT Spring Break |
+|      | 4/05    | Text Data in R                                                                                     | [TMR 1.0-1.3](https://www.tidytextmining.com/tidytext.html), [Appendix A](https://smltar.com/regexp.html#regexp) | Lab 1                |
+| 2    | 4/10    | Word relationship analysis                                                                         |                                                                                                                  |                      |
+|      | 4/12    | Topic analysis                                                                                     |                                                                                                                  | Lab 2                |
+| 3    | 4/17    | Classification Lecture                                                                             |                                                                                                                  |                      |
+|      | 4/19    | Classification                                                                                     |                                                                                                                  | Lab 3                |
+| 4    | Break   |                                                                                                    |                                                                                                                  |                      |
+|      | Break   |                                                                                                    |                                                                                                                  |                      |
+| 5    | 5/01    | Sentiment analysis I                                                                               |                                                                                                                  |                      |
+|      | 5/03    | Lab 4                                                                                              |                                                                                                                  | Lab 4                |
+| 6    | 5/08    | Sentiment analysis II                                                                              |                                                                                                                  |                      |
+|      | 5/10    | Lab 5                                                                                              |                                                                                                                  | Lab 5                |
