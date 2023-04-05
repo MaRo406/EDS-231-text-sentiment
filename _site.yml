@@ -1,7 +1,7 @@
 name: "eds-231-text-sentiment-analysis"
 title: "EDS 231"
 description: |
-  EDS231 Course Website
+ Course Website
 output_dir: "docs"
 navbar:
   right:
@@ -29,8 +29,8 @@ navbar:
     #     #   href: topic_9.html
     #     # - text: "Topic 10: Add a table"
     #     #   href: topic_10.html
-    - text: "Resources"
-      href: resources.html
+    # - text: "Resources"
+    #   href: resources.html
     - icon: fab fa-github
       href: https://github.com/MaRo406/EDS-231-text-sentiment
 output:
