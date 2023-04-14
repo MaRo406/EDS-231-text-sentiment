@@ -1,6 +1,6 @@
 ---
 title: "Lab 1: NYT API"
-author: "Your Name"
+author: "Mateo Robbins"
 date: "2023-04-05"
 output: html_document
 ---
@@ -13,7 +13,7 @@ library(tidytext) #text data management and analysis
 library(ggplot2) #plot word frequencies and publication dates
 
 #assign API key.  When you create a NYT Dev account, you will be given a key
-API_KEY <- "YOUR_API_KEY"
+API_KEY <- "NTKBHbsb6XFEkGymGumAiba7n3uBvs8V"
 ```
 
 Today we will be grabbing some data from the New York Times database via their API, then running some basic string manipulations, trying out the tidytext format, and creating some basic plots.
@@ -30,7 +30,7 @@ fromJSON() is a wrapper function that handles our request and the API response. 
 
 ```{r api, eval = FALSE}
 
- 
+# t <- fromJSON("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=haaland&api-key=",API_KEY,flatten = TRUE) 
 #create the query url
 url <- paste("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=haaland&api-key=",API_KEY, sep ="")
 
@@ -49,6 +49,7 @@ dim(t)
 
 # what variables are we working with?
 names(t)
+#t <- readRDS("nytDat.rds") #in case of API emergency :)
 
 ```
 
@@ -76,12 +77,13 @@ str_locate(x, 't'); str_locate_all(x, 'as')
 ### OK, it's working but we want more data. Let's set some parameters for a bigger query.
 
 ```{r}
-term1 <- "Haaland" # Need to use $ to string  together separate terms
+term1 <- "Deb" 
+term2 <- "&Haaland" # Need to use $ to string  together separate terms
 begin_date <- "20210120"
-end_date <- "20230401"
+end_date <- "20220401"
 
 #construct the query url using API operators
-baseurl <- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=",term1,"&begin_date=",begin_date,"&end_date=",end_date,"&facet_filter=true&api-key=","NTKBHbsb6XFEkGymGumAiba7n3uBvs8V", sep="")
+baseurl <- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=",term1,term2,"&begin_date=",begin_date,"&end_date=",end_date,"&facet_filter=true&api-key=","NTKBHbsb6XFEkGymGumAiba7n3uBvs8V", sep="")
 
 #examine our query url
 baseurl
@@ -92,7 +94,8 @@ The initial query returned one page of ten articles, but also gave us count of t
 ```{r, eval=FALSE}
 #dig into the JSON object to find total hits
 initialQuery <- fromJSON(baseurl)
-maxPages <- round((initialQuery$response$meta$hits[1] / 10)-1) 
+#maxPages <- round((initialQuery$response$meta$hits[1] / 10)-1) 
+maxPages <- 10
 #initiate a list to hold results of our for loop
 pages <- list()
 
@@ -101,7 +104,7 @@ for(i in 0:maxPages){
   nytSearch <- fromJSON(paste0(baseurl, "&page=", i), flatten = TRUE) %>% data.frame() 
   message("Retrieving page ", i)
   pages[[i+1]] <- nytSearch 
-  Sys.sleep(20) 
+  Sys.sleep(12) 
 }
 ```
 
@@ -111,7 +114,7 @@ We converted each returned JSON object into a data frame
 class(nytSearch)
 class(pages)
 #need to bind the pages and create a tibble from nytDat
-df <- do.call("rbind", pages)
+nyt_df <- do.call("rbind", pages)
 
 saveRDS(nyt_df, "nyt_df.rds")
 ```
@@ -119,9 +122,9 @@ saveRDS(nyt_df, "nyt_df.rds")
 Load the preconstructed nytDat so you can follow along.
 
 ```{r article-type}
-nytDat <- readRDS("nyt_df.rds")
+readRDS("nyt_df.rds")
+nytDat <- read.csv("nytDat.csv") 
 dim(nytDat)
-df <- nytDat
 
 df %>% 
   group_by(response.docs.type_of_material) %>%
@@ -150,6 +153,7 @@ paragraph <- names(nytDat)[6] #The 6th column, "response.doc.lead_paragraph", is
 
 #use tidytex::unnest_tokens to put in tidy form 
 tokenized <- nytDat %>%
+  filter(response.docs.news_desk!="Games"|response.docs.news_desk!="Sports") %>%
 unnest_tokens(word, paragraph) #word is the new column, paragraph is the source
 
 tokenized[,"word"]
@@ -180,20 +184,21 @@ tokenized <- tokenized %>%
 
 tokenized %>%
   count(word, sort = TRUE) %>%
-  filter(n > 10) %>%
+  filter(n > 5) %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(n, word)) +
   geom_col() +
   labs(y = NULL)
 ```
 
+OK, but look at the most common words. Does one stick out?
 
 ```{r cleaning, eval=FALSE}
 
 #inspect the list of tokens (words)
 tokenized$word
 
-clean_tokens <- str_remove_all(tokenized$word, "[:digit:]") #remove all numbers
+clean_tokens <- str_remove_all(clean_tokens, "[:digit:]") #remove all numbers
 
 clean_tokens <- gsub("’s", '', clean_tokens)
 
@@ -201,6 +206,7 @@ tokenized$clean <- clean_tokens
 
 tokenized %>%
   count(clean, sort = TRUE) %>%
+ #illegible with all the words displayed
   mutate(clean = reorder(clean, n)) %>%
   ggplot(aes(n, clean)) +
   geom_col() +
