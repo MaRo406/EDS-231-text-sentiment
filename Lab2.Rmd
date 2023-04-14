@@ -24,16 +24,25 @@ Sentiment analysis is a tool for assessing the mood of a piece of text. For exam
 Today's example will use data from the Nexis Uni (formerly Lexis Nexis) database, accessed through the UCSB library. There are a large number of news and other full-text publications available through the database. I'm interested in the discussion around deforestation of the Amazon rain forest. The current president of Brazil, Luiz Inacio Lula da Silva recently completed his first 100 days in office after running on a pledge to reduce the rate of deforestation. I'd like to know how the sentiment in coverage of deforestation changed after his election.
 
 ```{r raw_data}
-setwd(here("Nexis/Post"))
-
-my_files <- list.files(pattern = ".docx", path = getwd(),
-                       full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
+# setwd(here("Nexis/Post"))
+# 
+# my_files <- list.files(pattern = ".docx", path = getwd(),
+#                        full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
 
 ```
 
 We'll use the {LexisNexisTools} package to handle the documents from our Nexis search.
 
 ```{r}
+#start here to follow along
+dat <- readRDS("lexisdat.RDS")
+#dat <- lnt_read(my_files)
+
+meta_df <- dat@meta
+articles_df <- dat@articles
+paragraphs_df <- dat@paragraphs
+
+dat2 <- tibble(Date = meta_df$Date, Headline = meta_df$Headline, id = dat@articles$ID, text = dat@articles$Article)
 ```
 
 ```{r get_bing}
@@ -44,13 +53,29 @@ head(bing_sent, n = 20)
 1.  Score words using bing lexicon
 
 ```{r text_words}
+text_words <- dat2 %>%
+  unnest_tokens(output = word, input = text, token = 'words')
 
+sent_words <- text_words%>%
+  anti_join(stop_words, by='word') %>%
+  inner_join(bing_sent,by = 'word') %>%
+  mutate(sent_num = case_when(sentiment=='negative'~-1,
+                              sentiment=='positive'~1))
+            
 ```
 
 2.  Calculate mean sentiment (by word polarity) across articles
 
 ```{r mean_sent}
+sent_article <- sent_words %>%
+  group_by(Headline) %>%
+  count(id, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from=n, values_fill = 0) %>%
+  mutate(polarity= positive-negative)
+  #inner_join(text_words, by = "id") %>%
+  
 
+mean(sent_article$polarity)
 ```
 
 3.  Sentiment by article plot
@@ -58,7 +83,13 @@ head(bing_sent, n = 20)
 Let's try a very basic plot to see the amount of positive vs. negative articles.
 
 ```{r plot_sent_scores}
-
+ggplot(sent_article, aes(x = id)) +
+  theme_classic()+
+  geom_col(aes(y=positive), stat='identity', fill = 'slateblue3')+
+  geom_col(aes(y=negative), stat='identity', fill = 'red4') +
+  theme(axis.title.y = element_blank()) +
+  labs(title= 'Sentiment analysis: Amazon Deforestation', y = 'Sentiment score')
+  
 ```
 
 ##### Origin of the NRC lexicon
@@ -74,13 +105,36 @@ The result is a comprehensive word-emotion lexicon for over 10,000 words."
 Let's take a look at the most common emotion words in the data set
 
 ```{r nrc_sentiment}
+nrc_sent <- get_sentiments('nrc')
+nrc_word_counts<- text_words %>%
+  anti_join(stop_words, by='word') %>%
+  inner_join(nrc_sent) %>%
+  count(word, sentiment, sort = T)
+
 
 ```
 
 Let's break it out and plot the contributions by particular emotion categories.
 
 ```{r sent_counts}
+sent_counts <- text_words %>%
+  anti_join(stop_words, by='word') %>%
+  group_by(id) %>%
+  inner_join(nrc_sent) %>%
+  group_by(sentiment) %>%
+  count(word, sentiment, sort = T)
 
+sent_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n= 5)%>%
+  ungroup() %>%
+  mutate(word = reorder(word, n))%>%
+  ggplot(aes(n,word, fill = sentiment)) +
+  geom_col(show.legend = FALSE)+
+  facet_wrap(~sentiment, scales="free_y")+
+  labs(x = "Contribution to sentiment", y = NULL)
+
+  
 ```
 
 Now let's do a quick comparison to articles from the 100-days leading up to the beginning of Lula's term.
@@ -114,6 +168,7 @@ pre_sentiment <- sent_words %>%
   count(id, sentiment) %>%
   pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
   mutate(polarity = positive - negative)
+mean(pre_sentiment$polarity)
 ```
 
 ### Assignment (Due 4/18 by 11:59 PM)
