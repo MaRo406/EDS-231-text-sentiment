@@ -1,0 +1,98 @@
+---
+title: "Lab 4"
+author: "Mateo Robbins"
+date: "2023-04-25"
+output: html_document
+---
+
+```{r packages, include = FALSE}
+library(tidytext)
+library(tidyverse)
+library(tidymodels)
+library(textrecipes)
+library(discrim) # naive-bayes
+```
+
+This data set includes more possible predictors than the text alone, but for this model we will only use the text variable
+```{r data}
+
+urlfile ="https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/main/data/climbing_reports_model_dat.csv"
+incidents_df<-readr::read_csv(url(urlfile))
+```
+
+Now we'll split our data into training and test portions
+
+```{r split-data}
+set.seed(1234)
+
+incidents_split 
+
+incidents_train 
+incidents_test 
+
+```
+
+We use recipe() to specify the predictor and outcome variables and the data.
+
+```{r recipe}
+```
+
+Next we add some familiar pre-processing steps on our Text variable: tokenize to word level, filter to the most common words, and calculate tf-idf.
+
+```{r pre-process}
+```
+
+Create  tidymodels workflow to combine the modeling components
+
+```{r workflow}
+
+```
+
+```{r nb-spec}
+
+```
+
+Now we are ready to add our model to the workflow and fit it to the training data
+
+```{r fit-model}
+
+```
+Next up is model evaluation. We'll stretch our training data further and use resampling to evaluate our naive Bayes model. Here we create 10-fold cross-validation sets, and use them to estimate performance.
+
+```{r cv_folds}
+
+```
+
+```{r nb-workflow}
+
+```
+
+To estimate its performance, we fit the model to each of the resampled folds, and then evaluate on the heldout part of each resampled fold.
+
+```{r fit-resamples}
+
+```
+
+Extract the relevant information using collect_metrics() and collect_predictions() and examine the performance metrics.
+
+```{r performance}
+
+```
+
+We'll use two performance metrics: accuracy and ROC AUC.
+Accuracy is the proportion of the data that is predicted correctly. 
+The ROC curve plots the true positive rate against the false positive rate; AUC closer to 1 indicates a better-performing model, while AUC closer to 0.5 indicates a model that does no better than random guessing.
+
+```{r performance-plot}
+
+```
+
+Another model method involves the confusion matrix. A confusion matrix tabulates a model's false positives and false negatives for each class.
+
+```{r confusion-matrix}
+
+```
+
+```{r null-model}
+
+```
