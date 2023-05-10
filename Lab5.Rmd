@@ -1,0 +1,134 @@
+---
+title: "Lab5"
+author: "Your Name"
+date: "2023-05-10"
+output: html_document
+---
+
+```{r packages, include = FALSE}
+library(tidytext)
+library(tidyverse)
+library(widyr)
+library(irlba) 
+library(broom) 
+library(textdata)
+library(ggplot2)
+library(dplyr)
+```
+
+We'll start off today by loading the climbing incident data again.
+
+```{r data,}
+incidents_df<-read_csv("https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/main/data/climbing_reports_model_dat.csv")
+```
+
+First, let's calculate the unigram probabilities -- how often we see each word in this corpus.
+
+```{r unigrams}
+unigram_probs  
+```
+
+OK, so that tells us the probability of each word.
+
+Next, we need to know how often we find each word near each other word -- the skipgram probabilities. In this case we'll define the word context as a five-word window. We'll slide that window across all of our text and record which words occurr together within that window.
+
+Now let's write some code that adds an ngramID column that contains constituent information about each 5-gram we constructed by sliding our window.
+
+```{r make-skipgrams}
+skipgrams 
+```
+
+Now we use widyr::pairwise_count() to sum the total \# of occurences of each pair of words.
+
+```{r pairwise_count}
+#calculate probabilities
+skipgram_probs 
+```
+
+The next step is to normalize these probabilities, that is, to calculate how often words occur together within a window, relative to their total occurrences in the data.
+
+```{r norm-prob}
+normalized_prob
+```
+
+Now we have all the pieces to calculate the point-wise mutual information (PMI) measure. It's the logarithm of the normalized probability of finding two words together. PMI tells us which words occur together more often than expected based on how often they occurred on their own.
+
+Then we convert to a matrix so we can use matrix factorization and reduce the dimensionality of the data.
+
+```{r pmi}
+
+```
+
+We do the singluar value decomposition with irlba::irlba(). It's a "partial decomposition" as we are specifying a limited number of dimensions, in this case 100.
+
+```{r pmi}
+
+```
+
+These vectors in the "u" matrix are contain "left singular values". They are orthogonal vectors that create a 100-dimensional semantic space where we can locate each word. The distance between words in this space gives an estimate of their semantic similarity.
+
+Here's a function written by Julia Silge for matching the most similar vectors to a given vector.
+
+```{r syn-function}
+search_synonyms <- function(word_vectors, selected_vector) {
+dat <- word_vectors %*% selected_vector
+    
+similarities <- dat %>%
+        tibble(token = rownames(dat), similarity = dat[,1])
+
+similarities %>%
+       arrange(-similarity) %>%
+        select(c(2,3))
+}
+```
+
+Let's test it out!
+
+```{r find-synonyms}
+```
+
+Here's a plot for visualizing the most similar words to a given target word.
+
+```{r plot-synonyms}
+slip %>%
+    mutate(selected = "slip") %>%
+    bind_rows(fall %>%
+                  mutate(selected = "fall")) %>%
+    group_by(selected) %>%
+    top_n(15, similarity) %>%
+    ungroup %>%
+    mutate(token = reorder(token, similarity)) %>%
+    ggplot(aes(token, similarity, fill = selected)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~selected, scales = "free") +
+    coord_flip() +
+    theme(strip.text=element_text(hjust=0, size=12)) +
+    scale_y_continuous(expand = c(0,0)) +
+    labs(x = NULL, title = "What word vectors are most similar to slip or fall?")
+  
+```
+
+One of the cool things about representing words as numerical vectors is that we can use math on those numbers that has some semantic meaning.
+
+```{r word-math}
+```
+
+### Assignment
+
+#### Train Your Own Embeddings
+
+1.  Using the data from your Nexis Uni query from Week 2, create a set of word embeddings. To do this, you'll essentially need to recreate the steps in today's example down through the chunk named "pmi".
+
+2.  Think of 3-5 key words in your data set. Calculate and plot the 10 most semantically similar words for each of them. Identify and interpret any interesting or surprising results.
+
+3.  Assemble 3 word math equations that you think could be useful or interesting for exploring the meaning of key words or ideas in your data set.
+
+4.  Recreate the analyses in the last three chunks (find-synonyms, plot-synonyms, word-math) with the GloVe embeddings. How are they different from the embeddings created from the climbing accident data? Why do you think they are different?
+
+#### Pretrained Embeddings
+
+5.  Following the example in the SMLTR text (section 5.4), create a set of 100-dimensional GloVe word embeddings. These embeddings were trained by researchers at Stanford on 6 billion tokens from Wikipedia entries.
+
+6.  Test them out with the cannonical word math equation on the GloVe embeddings: "berlin" - "germany" + "france" = ?
+
+7.  Recreate parts 2 and 3 above using the the GloVe embeddings in place of the ones you trained. How do they compare? What are the implications for applications of these embeddings?
