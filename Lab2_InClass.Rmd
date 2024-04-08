@@ -12,6 +12,8 @@ library(tidytext)
 library(tidyverse)
 ```
 
+Download data zip file from here: https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/data/SB_stories.zip
+Unzip into a convenient location, ex. /data/Spring-Break-Stories
 ```{r}
 #list.files is base r to list files in dir/folder
 #we use map()  to apply a function to each element of a vector or list
