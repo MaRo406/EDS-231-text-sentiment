@@ -1,0 +1,37 @@
+---
+title: "Lab 2: Sentiment Analysis I"
+author: "Your Name"
+date: "2024-04-10"
+output: html_document
+---
+
+## Assignment (Due 4/16 by 11:59 PM)
+
+### Obtain your data and load it into R
+
+-   Access the Nexis Uni database through the UCSB library: <https://www.library.ucsb.edu/research/db/211>
+
+-   Choose a key search term or terms to define a set of articles.
+
+-   Use your search term along with appropriate filters to obtain and download a batch of at least 100 full text search results (.docx). You are limited to downloading 100 articles at a time, so if you have more results than that, you have to download them in batches (rows 1-100, 101-200, 201-300 etc.)
+
+    Guidance for {LexisNexisTools} : <https://github.com/JBGruber/LexisNexisTools/wiki/Downloading-Files-From-Nexis>
+
+-   Read your Nexis article documents into RStudio.
+
+-   Use the full text of the articles for the analysis. Inspect the data (in particular the full-text article data).
+
+```{=html}
+<!-- -->
+```
+-   If necessary, clean any artifacts of the data collection process (hint: this type of thing should be removed: "Apr 04, 2022( Biofuels Digest: <http://www.biofuelsdigest.com/Delivered> by Newstex") and any other urls)
+
+-   Remove any clear duplicate articles. LNT has a method for this, but it doesn't seem to work, so you probably need to do it manually.
+
+### Explore your data and conduct the following analyses:
+
+1.  Calculate mean sentiment across all your articles
+2.  Sentiment by article plot. The one provided in class needs significant improvement.
+3.  Most common nrc emotion words and plot by emotion
+4.  Look at the nrc contribution to emotion by word plots. Identify and reclassify or remove at least one term that gives misleading results in your context.
+5.  Plot the amount of nrc emotion words as a percentage of all the emotion words used each day (aggregate text from articles published on the same day). How does the distribution of emotion words change over time? Can you think of any reason this would be the case?
