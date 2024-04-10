@@ -30,8 +30,10 @@ Today's example will use data from the Nexis Uni (formerly Lexis Nexis) database
 #                      full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
 
 #saveRDS(post_files, "post_files.RDS")
+
 #You can start here for the demo:
-#
+# Download: https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/post_files.RDS
+
 post_files <- readRDS("post_files.RDS")
 ```
 
