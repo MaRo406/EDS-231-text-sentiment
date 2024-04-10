@@ -1,0 +1,244 @@
+---
+title: "Lab 1: NYT API"
+author: "Mateo Robbins"
+date: "2024-04-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(jsonlite) #convert results from API queries into R-friendly formats 
+library(tidyverse) #tidy
+library(tidytext) #text data management and analysis
+library(ggplot2) #plot word frequencies and publication dates
+
+#assign API key.  When you create a NYT Dev account, you will be given a key
+API_KEY <- "NTKBHbsb6XFEkGymGumAiba7n3uBvs8V"
+```
+
+Today we will be grabbing some data from the New York Times database via their API, then running some basic string manipulations, trying out the tidytext format, and creating some basic plots.
+
+<https://developer.nytimes.com/>
+
+### Connect to the New York Times API and send a query
+
+We have to decide which New York Times articles we are interested in examining. For this exercise, I chose articles about Deb Haaland, the current US Secretary of the Interior. As a member of the Laguna Pueblo Tribe, Haaland is the first Native American to serve as a Cabinet secretary. Very cool!
+
+We'll send a query to the NY Times API using a URL that contains information about the articles we'd like to access.
+
+fromJSON() is a wrapper function that handles our request and the API response. We'll use it to create an object,t, with the results of our query. The flatten = T argument converts from the nested JSON format to an R-friendlier form.
+
+```{r api, eval = FALSE}
+
+#create the query url
+url <- paste("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=haaland&api-key=",API_KEY, sep ="")
+
+#send the request, receive the response, and flatten
+t <- fromJSON(url, flatten = T)
+```
+
+```{r api, eval = FALSE}
+#what type of object is it?
+class(t)
+#convert to a data frame 
+t <- data.frame(t)
+# how big is it?
+dim(t)
+# what fields are we working with?
+names(t)
+
+```
+
+The name format, "response.xxx.xxx...", is a legacy of the JSON nested hierarchy.
+
+Let's look at a piece of text. Our data object has a variable called "response.docs.snippet" that contains a short excerpt, or "snippet" from the article. Let's grab a snippet and try out some basic string manipulations from {stringr}.
+
+```{r basic_stringr, eval=FALSE}
+t$response.docs.snippet[9]
+
+#assign a snippet to x to use as fodder for stringr functions.  
+
+x <- "Her nomination as secretary of the interior is historic, but as the first Native cabinet member, she would have to strike a delicate balance." 
+
+#convert to lowercase.  
+tolower(x)
+
+#split into substrings
+str_split(x,',')
+
+#swap strings
+str_replace(x,'historic',"without precedent")
+
+#how do we replace all of them?
+str_replace_all(x,' ','_')
+
+#detect a string
+str_detect(x,'t')
+
+#locate it
+str_locate_all(x,'as')
+
+```
+
+### OK, it's working but we want more data. Let's set some parameters for a bigger query.
+
+```{r}
+term1 <- "Deb" 
+term2 <- "Haaland"
+begin_date <- "20210120"
+end_date <- "20230401"
+
+#construct the query url using API operators
+baseurl <- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=",
+                  term1, "%20", term2,
+                  "&begin_date=", begin_date,
+                  "&end_date=", end_date,
+                  "&facet_filter=true",
+                  "&api-key=", API_KEY)
+
+#examine our query url
+baseurl
+
+```
+
+The initial query returned one page of ten articles, but also gave us count of total number of hits on our query. We can use that to size a for() loop to automate requests.
+
+```{r, eval=FALSE}
+#run initial query
+initialQuery <- fromJSON(baseurl)
+
+#maxPages <- round((initialQuery$response$meta$hits[1] / 10)-1) 
+maxPages <- 10
+#initiate a list to hold results of our for loop
+pages <- list()
+
+#loop
+for(i in 0:maxPages){
+  nytSearch <- fromJSON(paste0(baseurl, "&page=",i), flatten = TRUE) %>% data.frame()
+  message("Retrieving page ", i)
+  pages[[i+1]] <- nytSearch 
+  Sys.sleep(12)
+}
+```
+
+We converted each returned JSON object into a data frame.
+
+```{r, bind_rows}
+
+#bind the pages and create a tibble from nytDat
+nyt_df <- bind_rows(pages)
+
+```
+
+Let's start exploring our data.  What types of content did we turn up?
+```{r article-type}
+nyt_df %>% 
+  group_by(response.docs.type_of_material) %>%
+  summarize(count=n()) %>% #This creates a new data frame with the count of records for each type_of_material.
+  mutate(percent = (count / sum(count))*100) %>% #add percent of total column
+  ggplot() +
+  geom_bar(aes(y=percent, x=response.docs.type_of_material, fill=response.docs.type_of_material), stat = "identity") + coord_flip()
+```
+
+```{r date-plot}
+nytDat <- nyt_df
+
+nytDat %>%
+  mutate(pubDay=gsub("T.*","",response.docs.pub_date)) %>% 
+  group_by(pubDay) %>%
+  summarise(count=n()) %>%
+  filter(count >= 2) %>%
+  ggplot() +
+  geom_bar(aes(x=reorder(pubDay, count), y=count), stat="identity") +
+  coord_flip() #bring date so bars go lengthwise
+```
+
+The New York Times doesn't make full text of the articles available through the API. But we can use the first paragraph of each article.
+
+```{r plot_frequencies}
+names(nytDat)
+head(nytDat[,1:6])
+#The 6th column, "response.doc.lead_paragraph", is the one we want here.
+nytDat[6] 
+
+#use tidytext::unnest_tokens to put in tidy form.  
+#If there are some types of news that we'd like to exclude, we can filter()
+tokenized <- nytDat %>%
+  filter(response.docs.news_desk!=c("Games","Sports")) %>%
+unnest_tokens(word, response.docs.lead_paragraph) #word is the new column, paragraph is the source
+
+tokenized[,"word"]
+```
+
+Alright, let's starting analyzing our data.  What the most frequent words in the articles we have?
+```{r word_frequencies}
+tokenized %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 50) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col()+
+  labs(y = NULL)
+  
+```
+
+Uh oh, who knows what we need to do here?
+
+```{r stop-words}
+
+#load stop words
+data(stop_words)
+stop_words
+#stop word anti_join
+tokenized <- tokenized %>%
+  anti_join(stop_words)
+
+#now let's try that plot again
+
+tokenized %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 10) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col()+
+  labs(y = NULL)
+
+```
+
+OK, but look at the most common words. Does anything stand out?
+
+```{r cleaning}
+
+#inspect the list of tokens (words)
+tokenized$word
+
+#remove all numbers
+clean_tokens <- str_remove_all(tokenized$word, "[:digit:]") 
+
+#remove s contractions
+clean_tokens <- gsub("’s", '', clean_tokens)
+
+tokenized$clean <- clean_tokens
+
+tokenized %>%
+  count(clean, sort = TRUE) %>%
+  mutate(clean = reorder(clean, n)) %>%
+  ggplot(aes(n, clean)) +
+  geom_col() +
+  labs(y = NULL)
+
+#remove the empty strings
+tib <-subset(tokenized, clean!="")
+
+#reassign
+tokenized <- tib
+
+#try again
+tokenized %>%
+  count(clean, sort = TRUE) %>%
+  filter(n > 10) %>% 
+  mutate(clean = reorder(clean, n)) %>%
+  ggplot(aes(n, clean)) +
+  geom_col() +
+  labs(y = NULL)
+```
