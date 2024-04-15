@@ -1,0 +1,166 @@
+---
+title: "Lab 2:Demo"
+author: "Mateo Robbins"
+date: "4-10-2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(LexisNexisTools)
+library(dplyr)
+library(readr)
+library(stringr)
+library(here)
+library(tidytext)
+library(tidyr) #pivot_wider()
+library(ggplot2)
+```
+
+Sentiment analysis is a tool for assessing the mood of a piece of text. For example, we can use sentiment analysis to understand public perceptions of topics in environmental policy like energy, climate, and conservation.
+
+### Introduction to the example
+
+Today's example will use data from the Nexis Uni (formerly Lexis Nexis) database, accessed through the UCSB library. There are a large number of news and other full-text publications available through the database. I'm interested in the discussion around deforestation of the Amazon rain forest. I gathered articles 100 days both before and after the current president of Brazil, Luiz Inacio Lula da was elected to office after running on a pledge to reduce the rate of deforestation. I'd like to know how the sentiment in coverage of deforestation changed after his election. First we'll look at the articles after his election.
+
+```{r raw_data}
+#Data for the demo available here: https://ucsb.box.com/s/12yuiyo4pei0ox3uj9v5xr21w6267dv7
+#Data is a collection of .docx files.
+
+setwd(here("Nexis/Post")) #where the .docxs live
+post_files <- list.files(pattern = ".docx", path = getwd(),
+                      full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
+
+```
+
+We'll use the {LexisNexisTools} package (LNT) to handle the documents from our Nexis search.  LNT can read in the data and convert to LNToutput object which includes 3 separate tibbles:
+ 1. metadata
+ 2. article text
+ 3. paragraph text
+
+The LNToutput is an S4 object which is useful for more complex data structures like these nested dataframes. S4 objects have "slots" which are referenced by "@" An expression in the form object@slotName retrieves the value stored in slotName of object.
+
+```{r lnt_object}
+dat <- lnt_read(post_files)
+
+meta_df <- dat@meta
+articles_df <- dat@articles
+paragraphs_df <- dat@paragraphs
+
+dat2 <- tibble(Date=meta_df$Date, Headline = meta_df$Headline, id = articles_df$ID, text = articles_df$Article)
+```
+
+```{r get_bing}
+#load the bing sentiment lexicon from tidytext
+bing_sent <-  get_sentiments("bing")
+head(bing_sent)
+
+```
+
+1.  Score words using bing lexicon
+
+```{r text_words}
+text_words <- dat2 %>% 
+  unnest_tokens(output = word, input = text, token = 'words')
+
+#Let's start with a simple numerical score
+sent_words <- text_words %>%
+  anti_join(stop_words, by='word') %>%
+  inner_join(bing_sent, by='word') %>%
+  mutate(sent_num = case_when(sentiment =='negative'~-1,
+                              sentiment =='positive'~1))
+  
+sent_words          
+```
+
+2.  Calculate mean sentiment (by word polarity) across articles
+
+```{r mean_sent}
+sent_article <- sent_words %>%
+  group_by(Headline) %>%
+  count(id, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from=n)%>%
+  mutate(polarity = positive-negative)
+  
+#Mean polarity
+mean(sent_article$polarity, na.rm = T)
+```
+
+3.  Sentiment by article plot
+
+Let's try a very basic plot to see the amount of positive vs. negative articles.
+
+```{r plot_sent_scores}
+ggplot(sent_article, aes(x=id)) +
+  theme_classic()+
+  geom_col(aes(y=negative), stat='identity',fill='red4')+
+  geom_col(aes(y=positive), stat='identity',fill='slateblue3')+
+  theme(axis.title = element_blank())+
+  labs(title='Sentiment Analysis: Amazon Deforestation', y = 'Sentiment Score')
+
+```
+
+4.  nrc emotion words
+
+Let's take a look at the most common emotion words in the data set
+
+```{r nrc_sentiment}
+nrc_sent <- get_sentiments('nrc')
+nrc_word_counts <- text_words %>%
+  anti_join(stop_words, by='word') %>%
+  inner_join(nrc_sent) %>%
+  count(word, sentiment, sort=T)
+  
+  nrc_word_counts                         
+```
+
+Let's break it out and plot the contributions by particular emotion categories.
+
+```{r sent_counts}
+nrc_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n,n=5)%>%
+  ungroup() %>%
+  mutate(word = reorder(word, n))%>%
+  ggplot(aes(n,word,fill = sentiment))+
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales="free_y")+
+  labs(x='Contribution to Sentiment', y = NULL)
+  
+#plot sent_counts  
+
+```
+
+Now let's do a quick comparison to articles from the 100-days leading up to the beginning of Lula's term.
+
+```{r}
+setwd(here("Nexis/Pre"))
+
+pre_files <- list.files(pattern = ".docx", path = getwd(),
+                       full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
+
+pre_dat <- lnt_read(pre_files)
+
+pre_meta_df <- pre_dat@meta
+pre_articles_df <- pre_dat@articles
+pre_paragraphs_df <- pre_dat@paragraphs
+
+pre_dat2<- tibble(Date = pre_meta_df$Date, Headline = pre_meta_df$Headline, id = pre_dat@articles$ID, text = pre_dat@articles$Article)
+```
+
+```{r pre_text_words}
+text_words <- pre_dat2  %>%
+  unnest_tokens(output = word, input = text, token = 'words')
+ 
+ sent_words <- text_words%>% #break text into individual words
+  anti_join(stop_words, by = 'word') %>% #returns only the rows without stop words
+  inner_join(bing_sent, by = 'word') #joins and retains only sentiment words
+```
+
+```{r mean_pre}
+pre_sentiment <- sent_words %>%
+  count(id, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(polarity = positive - negative)
+mean(pre_sentiment$polarity)
+```
