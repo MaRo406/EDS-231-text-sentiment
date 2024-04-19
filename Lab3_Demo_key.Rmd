@@ -1,0 +1,217 @@
+---
+title: 'Lab 3: Topic Analysis'
+author: "Mateo Robbins"
+date: "2024-04-15"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval=FALSE)
+```
+
+```{r packages}
+library(quanteda)
+library(tm)
+library(topicmodels)
+library(ldatuning)
+library(tidyverse)
+library(tidytext)
+library(reshape2)
+```
+
+Load the data
+
+```{r data}
+tbl <-read_csv("https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/main/data/tm_demo_dat.csv")
+```
+
+First we'll build the corpus using corpus() from {quanteda}.
+
+```{r corpus}
+corpus <- corpus(x = tbl, text_field = "text")
+```
+
+Next, we can use tokens(), also from {quanteda}, to construct a tokens object. tokens() takes a range of arguments related to cleaning the data. Next we'll create a stopwords lexicon and remove each word contained in it from our tokens object. The quanteda function tokens_select() lets us do the removal.
+
+```{r tokens}
+tokens(corpus)
+toks <- tokens(corpus, remove_punct = T, remove_numbers = T)
+toks1 <- tokens_select(toks, pattern = add_stops, selection = "remove")
+```
+
+Now we can transform our data to prepare for topic modeling. Let's create a document-feature matrix with quanteda::dfm(). Topic modeling doesn't work with empty rows in this matrix, so we'll need to remove those. I do that here using {slam}, which is designed to deal with sparse matrices like ours.
+
+```{r dfm}
+dfm1 <- dfm(toks1, tolower = T)
+dfm2 <- dfm_trim(dfm1, min_docfreq = 2)
+
+#head(dfm)
+
+sel_idx <- slam::row_sums(dfm2)>0
+dfm <- dfm2[sel_idx,]
+```
+
+Great, now we are almost ready to run a model. We just have to come up with an initial value for k, the number of latent topics present in the data. How do we do this? Let's say I think there may be political, economic and environmental articles. So I will tell the model to look for 3 topics by setting the k parameter = 3.
+
+```{r LDA_modeling}
+k <- 3
+
+topicModel_k3 <- LDA(dfm,
+                     k, 
+                     method= "Gibbs",
+                     control= list(iter = 1000,
+                             verbose = 25))
+```
+
+Running topicmodels::LDA() produces an S3 object of class lda_topic_model which includes two posterior probability distributions: theta, a distribution over k topics within each document which gives𝑃(topic|document)) and beta (in tidytext, but referred to as phi in other places), the distribution over v terms within each topic, where v is our vocabulary and gives 𝑃(token|topic).
+
+Let's examine at our results. posterior() extracts the theta and beta matrices.
+
+```{r LDA_modeling_1}
+result <- posterior(topicModel_k3)
+attributes(result)
+
+beta <- result$terms
+theta <- result$topics
+dim(beta)
+dim(theta)
+terms(topicModel_k3, 10)
+```
+
+Alright, so that worked out OK. An alternative to specifying k based on theory or a hypothesis is to run a series of models using a range of k values. ldatuning::FindTopicsNumber gives us the tools for this.
+
+```{r find_k}
+library(tictoc)
+tic()
+result <- FindTopicsNumber(dfm,
+                           topics = seq(from = 2, 
+                                        to = 20, 
+                                        by = 1),
+metrics = c("CaoJuan2009", "Deveaud2014"),
+method = "Gibbs",
+verbose = T)
+toc()
+FindTopicsNumber_plot(result)
+```
+
+Alright, now let's estimate another model, this time with our new value of k.
+
+```{r LDA_again}
+k <- 4
+
+topicModel_k_select <- LDA(dfm, k, method="Gibbs", control=list(iter = 1000, verbose = 25))
+
+tmResult <- posterior(topicModel_k_select)
+terms(topicModel_k_select, 10)
+theta <- tmResult$topics
+beta <- tmResult$terms
+vocab <- (colnames(beta))
+
+```
+
+There are multiple proposed methods for how to measure the best k value. You can go down the rabbit hole here: https://rpubs.com/siri/ldatuning
+
+```{r top_terms_topic}
+topics <- tidy(topicModel_k_select, matrix = "beta")
+
+top_terms <- topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms
+```
+
+```{r plot_top_terms}
+
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic, sep = "")) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free_y") +
+  scale_x_reordered()+
+  coord_flip()
+
+```
+
+Let's assign names to the topics so we know what we are working with.
+
+```{r topic_names}
+#We can name the topics by interpreting the overall theme or idea they represent, but for now let's just name them by their top terms.
+topic_words <- terms(topicModel_k_select, 5)
+#apply paste function to the margin, 2 = column
+topic_names <- apply(topic_words, 2, paste, collapse = " ")
+#topic_names <- c("cattle","square-data","development","indigenous-climate")
+
+
+```
+
+We can explore the theta matrix, which contains the distribution of each topic over each document.
+
+```{r topic_dists}
+#specify # of examples to inspect
+example_ids <- c(1:5)
+n <- length(example_ids)
+
+# get topic proportions from example documents
+example_props <- theta[example_ids,]
+colnames(example_props) <- topic_names
+
+#combine example topics with identifiers and melt to plottable form
+viz_df <- melt(cbind(data.frame(example_props),
+                     document = factor(1:n),
+                     variable.name = "topic",
+                     id.vars = "document")
+)
+
+ggplot(data = viz_df, aes(variable, value, fill = document), ylab = "proportion") +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
+  coord_flip() +
+  facet_wrap(~ document, ncol = n)
+```
+
+Here's a neat JSON-based model visualizer, {LDAviz}. We can use this to visualize the words-on-topics distribution and intertopic distances. The size of the circles in the LDAvis plot show proportionally the amount of words that belong to each topic, and the space between circles shows the degree to which the circles share words.
+
+```{r LDAvis}
+library(LDAvis) #visualization 
+library("tsne") #matrix decomposition
+svd_tsne <- function(x) tsne(svd(x)$u)
+json <- createJSON(
+  phi = tmResult$terms, 
+  theta = tmResult$topics, 
+  doc.length = rowSums(dfm), 
+  vocab = colnames(dfm), 
+  term.frequency = colSums(dfm),
+  mds.method = svd_tsne,
+  plot.opts = list(xlab="", ylab="")
+)
+serVis(json)
+
+```
+
+The relevance parameter,λ:  
+
+Similar to tf-idf in its purpose.
+
+When  λ is close to 1, the relevance score emphasizes term frequency, making the interpretation focus on words that are common within the topic. 
+
+When  λ is lower, the score emphasizes the distinctiveness of terms, bringing out words that are unique to the topic even if they do not appear frequently
+
+Relevance(w,t) = λ×P(w∣t)+(1−λ)×P(w∣t)/P(w) 
+
+### Assignment Lab 3:
+
+Due next week: April 23 at 11:59PM
+
+For this assignment you'll use the article data you downloaded from Nexis Uni in Week 2.
+
+1.  Create a corpus from your articles.
+
+2.  Clean the data as appropriate.
+
+3.  Run three models (i.e. with 3 values of k) and select the overall best value for k (the number of topics) - include some justification for your selection: theory, FindTopicsNumber() optimization metrics, interpretability, LDAvis. Select the best single value of k.
+
+4.  Plot the top terms in each topic and the distribution of topics across a sample of the documents (constrained by what looks good in the plot).
+
+5.  Take a stab at interpreting the resulting topics. What are the key themes discussed in the articles in your data base?
