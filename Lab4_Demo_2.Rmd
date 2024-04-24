@@ -1,0 +1,219 @@
+---
+title: "Lab 4_Demo"
+author: "Mateo Robbins"
+date: "2024-04-22"
+output: html_document
+---
+
+```{r packages, include = FALSE}
+library(tidytext)
+library(tidyverse)
+library(tidymodels)
+library(textrecipes)
+library(discrim) # naive-bayes
+```
+
+This data set includes more possible predictors than the text alone, but for this model we will only use the text variable
+```{r data}
+
+urlfile ="https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/main/data/climbing_reports_model_dat.csv"
+incidents_df<-readr::read_csv(url(urlfile))
+```
+
+Now we'll split our data into training and test portions
+
+```{r split-data}
+set.seed(1234)
+
+incidents2class <- incidents_df %>%
+  mutate(fatal = factor(if_else(
+                        is.na(Deadly),
+                        "non-fatal", "fatal")))
+
+
+incidents_split <- initial_split(incidents2class, strata = fatal)
+
+incidents_train <- training(incidents_split)
+incidents_test <- testing(incidents_split)
+
+```
+
+We use recipe() to specify the predictor and outcome variables and the data.
+
+```{r recipe}
+incidents_rec <- recipe(fatal ~ Text, data = incidents_train)
+
+```
+
+Next we add some familiar pre-processing steps on our Text variable: tokenize to word level, filter to the most common words, and calculate tf-idf.
+
+```{r pre-process}
+recipe <- incidents_rec %>%
+  step_tokenize(Text) %>%
+  step_tokenfilter(Text, max_tokens = 5000) %>%
+  step_tfidf(Text)
+```
+
+Create  tidymodels workflow to combine the modeling components
+
+```{r workflow}
+incidents_wf <- workflow() %>%
+  add_recipe(recipe)
+```
+
+```{r nb-spec}
+nb_spec <- naive_Bayes() %>%
+  set_mode("classification") %>%
+  set_engine("naivebayes")
+
+nb_spec
+
+```
+
+Now we are ready to add our model to the workflow and fit it to the training data
+
+```{r fit-model}
+nb_fit <- incidents_wf %>%
+  add_model(nb_spec) %>%
+  fit(data = incidents_train)
+```
+Next up is model evaluation. We'll stretch our training data further and use resampling to evaluate our naive Bayes model. Here we create 10-fold cross-validation sets, and use them to estimate performance.
+
+```{r cv_folds}
+set.seed(999)
+incidents_folds <- vfold_cv(incidents_train)
+
+incidents_folds
+
+```
+
+```{r nb-workflow}
+  nb_wf <- workflow() %>%
+    add_recipe(recipe) %>%
+    add_model(nb_spec)
+  
+  nb_wf
+```
+
+To estimate its performance, we fit the model to each of the resampled folds, and then evaluate on the heldout part of each resampled fold.
+
+```{r fit-resamples}
+nb_rs <- fit_resamples(
+  nb_wf, 
+  incidents_folds, 
+  control = control_resamples(save_pred = T)
+)
+```
+
+Extract the relevant information using collect_metrics() and collect_predictions() and examine the performance metrics.
+
+```{r performance}
+nb_rs_metrics <- collect_metrics(nb_rs)
+nb_rs_predictions <- collect_predictions(nb_rs)
+
+nb_rs_metrics
+```
+
+We'll use two performance metrics: accuracy and ROC AUC.
+Accuracy is the proportion of the data that is predicted correctly. 
+The ROC curve plots the true positive rate against the false positive rate; AUC closer to 1 indicates a better-performing model, while AUC closer to 0.5 indicates a model that does no better than random guessing.
+
+```{r performance-plot}
+nb_rs_predictions %>%
+  group_by(id) %>%
+  roc_curve(truth = fatal, .pred_fatal) %>%
+  autoplot() +
+  labs(title = "ROC curve for Climbing Incident Reports")
+```
+
+Another model method involves the confusion matrix. A confusion matrix tabulates a model's false positives and false negatives for each class.
+
+```{r confusion-matrix}
+conf_mat_resampled(nb_rs, tidy = F) %>%
+  autoplot(type = "heatmap")
+```
+
+Let's move up to a more sophisticated model. Recall that lasso classification model uses regularization on regression to help us choose a simpler, more generalizable model.  Variable selection helps us identify which features to include in our model.
+
+Lasso classification learns how much of a penalty to put on features to reduce the high-dimensional space of original possible variables (tokens) for the final model.
+
+```{r lasso-specification}
+lasso_spec 
+```
+
+```{r lasso-workflow}
+lasso_wf 
+```
+
+```{r fit-resamples-lasso}
+set.seed(123)
+
+lasso_rs 
+```
+
+```{r lasso-plot}
+lasso_rs_predictions 
+```
+
+```{r lasso-conf-mat}
+
+```
+
+Recall that the penalty is a model hyperparameter (lambda). The higher it is, the more model coefficients are reduced (sometimes to 0, removing them -- feature selection). We set it manually before, but we can also estimate its best value, again by training many models on resampled data sets and examining their performance.
+
+```{r penalty-tuning-specification}
+tune_spec 
+
+```
+
+```{r lamba}
+lambda_grid 
+```
+
+Here we use grid_regular() to create 30 possible values for the regularization penalty. Then tune_grid() fits a model at each of those values.
+
+
+```{r tune}
+tune_wf 
+
+set.seed(2023)
+tunes_rs 
+```
+
+```{r plot_metrics}
+
+```
+
+```{r penalty-show-best}
+
+```
+
+OK, our tuning results have identified the best regularization penalty. Let's finalize our workflow with it. 
+
+```{r final-model}
+final_lasso 
+```
+
+The penalty argument value now reflects our tuning result. Now we fit to our training data.
+
+```{r}
+fitted_lasso 
+```
+
+First let's look at the words associated with an accident being non-fatal.
+
+```{r words-non-fatal}
+
+```
+
+And now the words that are most associated with a fatal incident.
+
+```{r words-fatal}
+fitted_lasso
+```
+
+Finally, let's fit to the test data and see how we did.
+```{r}
+
+```
+

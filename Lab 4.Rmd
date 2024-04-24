@@ -1,0 +1,22 @@
+---
+title: "Lab 4"
+author: "Your Name"
+date: "2024-04-24"
+output: html_document
+---
+
+Lab 4 Assignment: Due May 7 at 11:59pm
+
+1. Select another classification algorithm.  
+
+2. Conduct an initial out-of-the-box model fit on the training data and prediction on the test data.  Assess the performance of this initial model. 
+
+3. Select the relevant hyperparameters for your algorithm and tune your model.
+
+4. Conduct a model fit using your newly tuned model specification.  How does it compare to your out-of-the-box model?
+
+5.
+  a. Use variable importance to determine the terms most highly associated with non-fatal reports?  What about terms associated with fatal reports? OR
+  b. If you aren't able to get at variable importance with your selected algorithm, instead tell me how you might in theory be able to do it. Or how you might determine the important distinguishing words in some other way. 
+
+6. Predict fatality of the reports in the test set.  Compare this prediction performance to that of the Naive Bayes and Lasso models.  Why do you think your model performed as it did, relative to the other two?
