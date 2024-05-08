@@ -1,0 +1,92 @@
+---
+title: "Lab5_Demo"
+author: "Mateo Robbins"
+date: "2024-05-08"
+output: html_document
+---
+
+```{r packages, include = FALSE}
+library(tidytext)
+library(tidyverse)
+library(widyr) 
+library(irlba)
+library(broom) 
+library(textdata)
+library(ggplot2)
+library(dplyr)
+```
+
+#### Word Embeddings
+
+We'll start off today by loading the climbing incident data again. This week we aren't interested in the fatality variable, just the text of the reports.
+
+```{r data,}
+incidents_df<-read_csv("https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/main/data/climbing_reports_model_dat.csv")
+```
+
+First, let's calculate the unigram probabilities -- how often we see each word in this corpus.
+
+```{r unigrams}
+unigram_probs <- 
+```
+
+OK, so that tells us the probability of each word.
+
+Next, we need to know how often we find each word near each other word -- the skipgram probabilities. In this case we'll define the word context as a five-word window. We'll slide that window across all of our text and record which words occur together within that window.
+
+We'll add an ngramID column that contains constituent information about each 5-gram we constructed by sliding our window.
+
+```{r make-skipgrams}
+skipgrams <- 
+  
+```
+
+Now we use widyr::pairwise_count() to sum the total # of occurrences of each pair of words.
+
+```{r pairwise_count}
+skipgram_probs  <- 
+```
+
+The next step is to normalize these probabilities, that is, to calculate how often words occur together within a window, relative to their total occurrences in the data. We'll also harmnoize the naming conventions from the different functions we used.
+
+```{r norm-prob}
+normalized_probs <- 
+```
+
+Now we have all the pieces to calculate the point-wise mutual information (PMI) measure. It's the logarithm of the normalized probability of finding two words together. PMI tells us which words occur together more often than expected based on how often they occurred on their own.
+
+Then we cast to a matrix so we can use matrix factorization and reduce the dimensionality of the data.
+
+```{r pmi}
+pmi_matrix <- 
+```
+
+We do the singular value decomposition with irlba::irlba(). It's a "partial decomposition" as we are specifying a limited number of dimensions, in this case 100.
+
+```{r svd}
+pmi_matrix
+```
+
+These vectors in the "u" matrix are contain "left singular values". They are orthogonal vectors that create a 100-dimensional semantic space where we can locate each word. The distance between words in this space gives an estimate of their semantic similarity.
+
+```{r syn_function}
+
+```
+
+Let's test it out!
+
+```{r find-synonyms}
+
+```
+
+Here's a plot for visualizing the most similar words to a given target word.
+
+```{r plot-synonyms}
+
+```
+
+One of the cool things about representing words as numerical vectors is that we can use math on those numbers that has some semantic meaning.
+
+```{r word-math}
+
+```
