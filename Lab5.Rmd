@@ -1,0 +1,30 @@
+---
+title: "Lab5"
+author: "Mateo Robbins"
+date: "2024-05-08"
+output: html_document
+---
+
+### Lab 5 Assignment
+
+#### Train Your Own Embeddings
+
+1.  Using the data from your Nexis Uni query from Week 2, create a set of word embeddings. To do this, you'll essentially need to recreate the steps in today's example down through the chunk named "pmi". 
+
+2.  Think of 3 important words in your data set. Calculate and plot the 10 most semantically similar words for each of them. Identify and interpret any interesting or surprising results.
+
+3.  Assemble 3 word math equations that you think could be useful or interesting for exploring the meaning of key words or ideas in your data set.
+
+
+#### Pretrained Embeddings
+
+4.  Following the example in the SMLTR text (section 5.4), create a set of 100-dimensional GloVe word embeddings. These embeddings were trained by researchers at Stanford on 6 billion tokens from Wikipedia entries.
+
+Note: The embeddings .zip file is very large. You may have to increase your global timeout setting to download, ex: options(timeout=100)
+
+
+5.  Test them out with the canonical word math equation on the GloVe embeddings: "berlin" - "germany" + "france" = ?
+
+Hint: you'll need to convert the GloVe dataframe to a matrix and set the row names in order to use our synonym function.
+
+6.  Recreate parts 2 and 3 above using the the GloVe embeddings in place of the ones you made. How do they compare? What are the implications for applications of these embeddings?
