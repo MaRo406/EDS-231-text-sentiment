@@ -8,12 +8,16 @@ output: html_document
 ```{r packages, include = FALSE}
 library(tidytext)
 library(tidyverse)
-library(widyr) 
-library(irlba)
+library(widyr)
+library(irlba) 
 library(broom) 
 library(textdata)
 library(ggplot2)
 library(dplyr)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval=FALSE)
 ```
 
 #### Word Embeddings
@@ -27,30 +31,56 @@ incidents_df<-read_csv("https://raw.githubusercontent.com/MaRo406/EDS-231-text-s
 First, let's calculate the unigram probabilities -- how often we see each word in this corpus.
 
 ```{r unigrams}
-unigram_probs <- 
+unigram_probs <- incidents_df %>%
+  unnest_tokens(word, Text) %>%
+  anti_join(stop_words, by = 'word') %>% #stop here and let them take a stab
+  count(word, sort=T) %>%
+  mutate(p=n/sum(n))
+unigram_probs
 ```
 
 OK, so that tells us the probability of each word.
 
 Next, we need to know how often we find each word near each other word -- the skipgram probabilities. In this case we'll define the word context as a five-word window. We'll slide that window across all of our text and record which words occur together within that window.
 
-We'll add an ngramID column that contains constituent information about each 5-gram we constructed by sliding our window.
+Now let's write some code that adds an ngramID column that contains constituent information about each 5-gram we constructed by sliding our window.
 
 ```{r make-skipgrams}
-skipgrams <- 
+
+skipgrams <- incidents_df %>%
+  unnest_tokens(ngram, Text, token = "ngrams", n = 5) %>% 
+  mutate(ngramID = row_number()) %>% 
+  tidyr::unite(skipgramID, ID, ngramID) %>% 
+  unnest_tokens(word, ngram) %>% 
+  anti_join(stop_words, by = 'word')
   
+  skipgrams
 ```
 
 Now we use widyr::pairwise_count() to sum the total # of occurrences of each pair of words.
 
 ```{r pairwise_count}
-skipgram_probs  <- 
+#calculate probabilities of given pairs
+skipgram_probs  <- skipgrams %>%
+  pairwise_count(item = word, feature = skipgramID, diag = F) %>% # sort = T, upper = F
+  mutate(p=n/sum(n))
+
+skipgram_probs
 ```
 
-The next step is to normalize these probabilities, that is, to calculate how often words occur together within a window, relative to their total occurrences in the data. We'll also harmnoize the naming conventions from the different functions we used.
+The next step is to normalize these probabilities, that is, to calculate how often words occur together within a window, relative to their total occurrences in the data.
 
 ```{r norm-prob}
-normalized_probs <- 
+normalized_probs <- skipgram_probs %>%
+  rename(word1 = item1, word2 = item2) %>% 
+  left_join(unigram_probs %>%
+              select(word1 = word, p1 = p), by = "word1") %>%
+  left_join(unigram_probs %>%
+              select(word2 = word, p2 = p), by = "word2") %>%
+  mutate(p_together = p/p1/p2)
+
+normalized_prob[1001:1010,] 
+  
 ```
 
 Now we have all the pieces to calculate the point-wise mutual information (PMI) measure. It's the logarithm of the normalized probability of finding two words together. PMI tells us which words occur together more often than expected based on how often they occurred on their own.
@@ -58,35 +88,81 @@ Now we have all the pieces to calculate the point-wise mutual information (PMI) 
 Then we cast to a matrix so we can use matrix factorization and reduce the dimensionality of the data.
 
 ```{r pmi}
-pmi_matrix <- 
+pmi_matrix <- normalized_prob %>%
+  mutate(pmi = log10(p_together)) %>%
+  cast_sparse(word1, word2, pmi)
+
 ```
 
 We do the singular value decomposition with irlba::irlba(). It's a "partial decomposition" as we are specifying a limited number of dimensions, in this case 100.
 
 ```{r svd}
-pmi_matrix
+pmi_matrix@x[is.na(pmi_matrix@x)] <-0 #
+
+# Perform SVD using irlba
+pmi_svd <- irlba(pmi_matrix, 100, verbose = F)
+
+# Extract left singular vectors
+word_vectors <- pmi_svd$u
+
+# Assign row names to the word vectors for ease of reference
+rownames(word_vectors) <- rownames(pmi_matrix)
+
 ```
 
 These vectors in the "u" matrix are contain "left singular values". They are orthogonal vectors that create a 100-dimensional semantic space where we can locate each word. The distance between words in this space gives an estimate of their semantic similarity.
 
-```{r syn_function}
 
+```{r}
+search_synonyms <- function(word_vectors, selected_vector, original_word) {
+  dat <- word_vectors %*% selected_vector  # Calculate similarities
+    similarities <- as.data.frame(dat) %>%
+                  tibble(token = rownames(dat), similarity = dat[,1]) %>%
+                  filter(token != original_word) %>%  # Exclude the original word
+                  arrange(desc(similarity)) %>%
+                  select(token, similarity)
+  
+  return(similarities)
+}
 ```
 
 Let's test it out!
 
 ```{r find-synonyms}
-
+fall <- search_synonyms(word_vectors, word_vectors["fall",], "fall")
+fall
+slip <- search_synonyms(word_vectors, word_vectors["slip",], "slip")
+slip
+ice <- search_synonyms(word_vectors, word_vectors["ice",],"ice")
+ice
+climb <- search_synonyms(word_vectors, word_vectors["climb",],"climb")
+climb
 ```
 
 Here's a plot for visualizing the most similar words to a given target word.
 
 ```{r plot-synonyms}
-
+slip %>%
+    mutate(selected = "slip") %>%
+    bind_rows(fall %>%
+                  mutate(selected = "fall")) %>%
+    group_by(selected) %>%
+    top_n(15, similarity) %>% 
+    mutate(token = reorder(token, similarity)) %>%
+    ggplot(aes(token, similarity, fill = selected)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~selected, scales = "free") +
+    coord_flip() +
+    labs(x = NULL, title = "What word vectors are most similar to slip or fall?")
+  
 ```
 
 One of the cool things about representing words as numerical vectors is that we can use math on those numbers that has some semantic meaning.
 
 ```{r word-math}
+snow_danger <- word_vectors["snow",] + word_vectors["danger",]
+search_synonyms(word_vectors,snow_danger, "")
 
+no_snow_danger <- word_vectors["danger",] - word_vectors["snow",]
+search_synonyms(word_vectors,no_snow_danger, "")
 ```
