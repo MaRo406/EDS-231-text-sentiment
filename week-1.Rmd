@@ -1,0 +1,48 @@
+---
+title: "Week 1: Introduction & Course Overview"
+#subtitle: "March 31, 2026"
+date: "March 31, 2026"
+output:
+  html_document:
+    theme: bootstrap
+    highlight: pygments
+    css: week-styles.css
+    toc: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> Getting oriented: what we'll cover and why it matters.
+
+---
+
+## Overview
+
+This week we set the foundation for the course. We'll introduce the core concepts and review the syllabus.
+
+---
+
+## Lecture Materials
+
+### Slides
+
+🖥 Full slide deck from lecture.
+
+[View and Download PDF](https://ucsb.box.com/s/n2aqn5vdjv8y4eojexdpmjkpwpu79kvp){.btn .btn-primary} &nbsp; 
+
+---
+
+## 📂 Assignments
+
+### Spring Break Story <span class="badge badge-danger">Participation</span>
+
+**Due: Today at the end of class**
+
+[Submission Folder](https://ucsb.app.box.com/f/9ca88f5dbb114e2c85479079c3832f0c){.btn .btn-default}
+
+---

@@ -1,24 +1,17 @@
 ---
 title: 'EDS 231: Text and Sentiment Analysis for Environmental Problems'
-description: Master’s of Environmental Data Science Program, UC Santa Barbara
+description: Masters of Environmental Data Science Program, UC Santa Barbara
 site: distill::distill_website
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
-# Learn more about creating websites with Distill at:
-# https://rstudio.github.io/distill/website.html
-
-# Learn more about publishing to GitHub Pages at:
-# https://rstudio.github.io/distill/publish_website.html#github-pages
-
 ```
 
 ```{r, out.width = "100%", fig.cap = "Text and sentiment analysis for environmental problems"}
 
 # UPDATE IMAGE HERE
-# or copy/paste this code elsewhere, updating the file path, to add other images to your site!
 knitr::include_graphics("img/homepage-header.png")
 ```
 
