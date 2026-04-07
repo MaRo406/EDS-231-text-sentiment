@@ -1,7 +1,7 @@
 name: "eds-231-text-sentiment-analysis"
 title: "EDS 231"
 description: |
- Course Website
+  Course Website
 output_dir: "docs"
 navbar:
   right:
@@ -9,10 +9,10 @@ navbar:
       href: index.html
     - text: "Materials"
       menu:
-         - text: "Week 1: Intro"
-           href: week-1.html
-    #      - text: "Topic 2: Update site title & subtitle"
-    #     #   href: topic_2.html
+        - text: "Week 1: Intro"
+          href: week-1.html
+        - text: "Week 2: NYT API"
+          href: week-2.html
     #     # - text: "Topic 3: Add images"
     #     #   href: topic_3.html
     #     # - text: "Topic 4: Change the theme"

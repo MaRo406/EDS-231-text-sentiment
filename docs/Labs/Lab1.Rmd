@@ -1,0 +1,216 @@
+---
+title: "Lab1: NYT API"
+author: "Your Name"
+date: "2026-04-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(jsonlite) #convert results from API queries into R-friendly formats 
+library(tidyverse)
+library(tidytext) #text data management and analysis
+library(ggplot2) #plot word frequencies and publication dates
+```
+
+```{r API-key, include=FALSE}
+#assign API key.  When you create a NYT Dev account, you will be given a key
+#API_KEY <- "YOUR_API_KEY"
+```
+
+Today we will be grabbing some data from the New York Times database via their API, then running some basic string manipulations, trying out the tidytext format, and creating some basic plots.
+
+<https://developer.nytimes.com/>
+
+### Connect to the New York Times API and send a query
+
+We have to decide which New York Times articles we are interested in examining. For this exercise, we'll examine coverage of **extreme heat** — a consequential and fast-accelerating climate hazard. Heat waves are now hotter, longer, and more frequent due to climate change, and they kill more people globally than any other weather-related disaster.
+
+We'll send a query to the NY Times API using a URL that contains information about the articles we'd like to access. For this in-class demo, you won't actually query the API, but you'll be following this process to complete the lab assignment.
+
+We use `fromJSON()` from `{jsonlite}` to send our request to the NYT API and parse the JSON response into an R object. The `flatten = TRUE` argument converts the nested JSON structure into a flat data frame that is easier to work with in R.
+
+```{r api, eval = FALSE}
+searchQ = URLencode("extreme heat")
+url = paste0('https://api.nytimes.com/svc/search/v2/articlesearch.json?q=', searchQ,
+             '&begin_date=20240401&end_date=20260401&api-key=', API_KEY)
+
+t = fromJSON(url, flatten = TRUE)
+
+```
+
+```{r inspect-result, eval = FALSE}
+#what type of object is t?
+
+t <- 
+
+# how big is it?
+
+
+# what variables are we working with?
+
+  
+# how many articles matched our query
+
+```
+
+Let's look at a piece of text. Our data frame has a column called `snippet` that contains a short excerpt, or "snippet" from the article. Let's grab a snippet and try out some basic `stringr` functions.
+
+The `stringr` package gives us a consistent set of functions for working with character strings. All functions start with `str_` and take the string as the first argument, making them easy to use inside `mutate()` or `filter()` calls.
+
+```{r basic_stringr, eval=FALSE}
+#assign a snippet to x to use as fodder for stringr functions.  You can follow along using the sentence on the next line.
+
+x <- "Governments around the world are enacting measures to try to protect workers from the dangers of heat stress. They’re barely keeping up with the risks."
+
+```
+
+### API Function
+
+OK, it's working but we want more data. Let's define a function that let's us programatically call the API.
+
+```{r api-function}
+nytAPI = function(term1, begin_date, end_date, api) {
+  searchQ = URLencode(term1)
+  url = paste0('https://api.nytimes.com/svc/search/v2/articlesearch.json?q=', searchQ,
+               '&begin_date=', begin_date, '&end_date=', end_date, '&api-key=', api)
+  
+  initialsearch = fromJSON(url, flatten = TRUE) #we create an initial search to find out how many total hits, or articles that meet our query parameters
+  hits = initialsearch$response$meta$hits
+  
+  if (hits == 0) return(data.frame()) ##if there are no hits, return an empty data frame
+
+  maxPages = min(round(hits / 10) - 1, 10) #otherwise, we find out how many times we'll need to loop thru fcn, each time returning 10 pages
+
+  df = data.frame(id=as.numeric(), created_time=character(),
+                  snippet=character(), headline=character())
+
+  for (i in 0:maxPages) {
+    nytSearch = fromJSON(paste0(url, "&page=", i), flatten = TRUE)
+    temp = data.frame(id = 1:nrow(nytSearch$response$docs),
+                  created_time = nytSearch$response$docs$pub_date,
+                  snippet = nytSearch$response$docs$snippet,
+                  headline = nytSearch$response$docs$headline.main)
+    df = rbind(df, temp)
+    Sys.sleep(12)
+  }
+  return(df)
+}
+```
+
+Now I'll set some parameters for a bigger query.
+
+```{r results}
+# results = nytAPI(term1 = "extreme heat", begin_date = "20240401", end_date = "20260401", api = API_KEY)
+# 
+# write.csv(results, paste0("NYT-", term1,".csv"))
+# 
+# nytDat <- results
+```
+
+You'll be compiling your own data set later, but for now, load the preconstructed nytDat so you can follow along.
+
+```{r read-dat}
+url <- "https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/refs/heads/main/data/NYT-extreme%20heat.csv"
+results <- read_csv(url)
+
+nytDat <- results
+```
+
+Let's visualize our dataset. Plotting \# articles per day let's us ask which days had the most coverage of extreme heat, whether coverage spikes around particular events (e.g. a major heatwave), and the overall pattern of media attention to the topic over time.
+
+```{r date-plot}
+nytDat %>%
+  mutate(pubDay = as.Date(created_time)) %>%
+  group_by(pubDay) %>%
+  summarise(count=n()) %>%
+  filter(count >= 2) %>%
+  ggplot() +
+  geom_bar(aes(x=reorder(pubDay, count), y=count), stat="identity") +
+  coord_flip()
+```
+
+The New York Times doesn’t make full text of the articles available through the API. But we can use a snippet of each article to do some text manipulation.
+
+### Tokenization
+
+**Tokenization** is the process of splitting text into individual units — usually words, but sometimes phrases or characters. It’s the first step in almost every text analysis workflow because most text analysis methods operate on tokens, not raw strings. The `tidytext` function `unnest_tokens()` handles tokenization and simultaneously converts to lowercase, strips punctuation, and puts the data in tidy (one-token-per-row) format, which plays well with `dplyr` and `ggplot2`.
+
+```{r plot_frequencies}
+
+snippet <-  
+
+#use tidytext::unnest_tokens to put in tidy form
+tokenized <- 
+
+tokenized[]
+```
+
+Now we can count word frequencies across all snippets. This raw frequency distribution gives us a first look at what dominates the corpus.
+
+```{r word_frequencies}
+tokenized %>%
+  count() %>%
+  filter() %>% 
+  mutate() %>%
+  ggplot(aes()) +
+  geom_col() 
+```
+
+Uh oh, who knows what we need to do here?
+
+### Stop Word Removal
+
+The most frequent words in any corpus are almost always **stop words** — function words like "the", "a", "of", "and" that carry little semantic content on their own. Removing them lets the meaningful, content-bearing words rise to the top of our frequency counts. The `tidytext` package has a `stop_words` lexicon drawn from three dictionaries (SMART, Snowball, onix) that covers the most common English stop words. We remove them with `anti_join()`, which keeps only rows in our token data that do *not* appear in the stop words list.
+
+```{r stop-words}
+
+data(stop_words)
+stop_words
+
+tokenized <- 
+
+#plot again  
+
+```
+
+Let's look at our list of tokens. Does anything stand out?
+
+```{r inspect-tokens}
+#inspect the list of tokens (words)
+
+```
+
+### Text Normalization and Cleaning
+
+Even after removing stop words, raw tokens often contain noise: digits mixed in with words, possessives like `"heat’s"`, stray punctuation, or empty strings left behind after other substitutions. **Text normalization** (also called regularization) is the process of standardizing token form so that variants of the same surface string are treated consistently. Here we use `stringr` and base R regex to strip digits and possessives, then remove any empty strings that result.
+
+```{r cleaning, eval=FALSE}
+#remove all numbers
+clean_tokens <-  
+
+#remove possessives
+clean_tokens <- 
+
+# add cleaned tokens back to df
+tokenized$clean <- clean_tokens
+
+#plot again
+
+```
+
+## Assignment (Due Tuesday 4/14 11:59pm)
+
+1.  Create a free New York Times account (<https://developer.nytimes.com/get-started>)
+
+2.  Pick an environmental term of interest to you and use the {jsonlite} package to query the API. Pick something high profile enough and over a large enough time frame that your query yields enough articles for an interesting examination.
+
+3.  Recreate the publications per day and word frequency plots using the snippets.
+
+-   Make some (at least 3) transformations to the corpus (add context-specific stopword(s), simplify possessives, remove numbers)
+
+4.  Recreate the publications per day and word frequency plots using the headlines variable (response.docs.headline.main). Compare the distributions of word frequencies between the snippet and headlines. Do you see any differences? Why might this be?
+
+Submit finished labs in both .Rmd and knitted PDF or html form to Canvas.
+
+*\*\*Remember that complete assignments require readable, informative, aesthetically pleasing visualizations. You'll have to improve on the bare bones versions in this demo.*

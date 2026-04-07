@@ -1,0 +1,66 @@
+---
+title: "Week 2: NYT API"
+subtitle: "EDS 231 — Spring 2026"
+date: 
+output:
+  html_document:
+    theme: flatly
+    highlight: pygments
+    css: week-styles.css
+    toc: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> An introduction to text preprocessing and the New York Times article API.
+
+---
+
+### Learning Objectives
+
+By the end of this week, you will be able to:
+
+- Make API calls in R — constructing URLs with query parameters and authenticating with an API key
+- Conduct exploratory data analysis — visualizing temporal patterns in media coverage using ggplot2
+- Apply string manipulation — cleaning strings using functions like str* and gsub()
+- Use stop word dictionaries — removing common uninformative words from text data to prepare it for analysis
+
+---
+
+### Recommended Reading
+
+📖 [TMR 1.0-1.3](https://www.tidytextmining.com/tidytext.html),
+   [SMLTR Appendix A](https://smltar.com/regexp.html#regexp)
+
+---
+
+## Lecture Materials
+
+### Slides
+
+🖥 Slide deck from lecture
+
+[View Slides](https://ucsb.box.com/s/e4bjyt0nhzjgb01wt1ekd2ts3gt3uo6o) 
+
+### Code & Data
+
+💻 R scripts and datasets used during class:
+
+[Lab 1 In-class](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab1.Rmd)
+
+---
+
+## 📂 Assignments
+
+### Lab 1 — NYT API <span class="badge badge-danger">Graded · 11 pts</span>
+
+**Due: April 14 @ 11:59 pm**
+
+Complete the short data exploration exercise using the provided dataset. Submit your .Rmd and knitted document (HTML or PDF) to Canvas.
+
+---
