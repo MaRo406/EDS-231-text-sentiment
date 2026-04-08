@@ -49,9 +49,11 @@ By the end of this week, you will be able to:
 
 ### Code & Data
 
-💻 R scripts and datasets used during class:
+💻 R scripts used during class:
 
-[Lab 1 In-class](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab1.Rmd)
+[Lab 1 In-class.Rmd](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab1.Rmd)
+
+[key-Lab1.Rmd](https://github.com/MaRo406/EDS-231-text-sentiment/blob/084b78fa0dec0dd41b686b014bc04edd1609c0a4/Labs/key-Lab1.Rmd)
 
 ---
 
@@ -59,8 +61,9 @@ By the end of this week, you will be able to:
 
 ### Lab 1 — NYT API <span class="badge badge-danger">Graded · 11 pts</span>
 
+
 **Due: April 14 @ 11:59 pm**
 
-Complete the short data exploration exercise using the provided dataset. Submit your .Rmd and knitted document (HTML or PDF) to Canvas.
+Complete the assignment laid out in Lab1. Submit your .Rmd and knitted document (HTML or PDF) to Canvas.
 
 ---

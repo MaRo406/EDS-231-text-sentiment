@@ -203,14 +203,20 @@ tokenized$clean <- clean_tokens
 
 1.  Create a free New York Times account (<https://developer.nytimes.com/get-started>)
 
-2.  Pick an environmental term of interest to you and use the {jsonlite} package to query the API. Pick something high profile enough and over a large enough time frame that your query yields enough articles for an interesting examination.
+    -   Once you have finished this process, you'll have an API key. As a manner of best practice, store this key as an environment variable so it's not visible in your final products:
+
+        -   `usethis::edit_r_environ()`
+
+        -   `NYT_KEY=your_api_key_here`
+
+        -   Restart R and access key when needed like so: `API_KEY <- Sys.getenv("NYT_KEY")`
+
+2.  Pick an environmental term of interest to you and use the {jsonlite} package and our custom function to query the API. Pick something high profile enough and over a large enough time frame that your query yields enough articles for an interesting examination.
 
 3.  Recreate the publications per day and word frequency plots using the snippets.
 
--   Make some (at least 3) transformations to the corpus (add context-specific stopword(s), simplify possessives, remove numbers)
+-   Make some (at least 2) clarifying transformations to the corpus (simplify possessives, remove numbers, remove empty tokens, add context-specific stopword(s))
 
-4.  Recreate the publications per day and word frequency plots using the headlines variable (response.docs.headline.main). Compare the distributions of word frequencies between the snippet and headlines. Do you see any differences? Why might this be?
-
-Submit finished labs in both .Rmd and knitted PDF or html form to Canvas.
+4.  Recreate the publications per day and word frequency plots using the headlines variable (response.docs.headline.main). Compare the distributions of word frequencies between the snippet and headlines. Do you see any difference?
 
 *\*\*Remember that complete assignments require readable, informative, aesthetically pleasing visualizations. You'll have to improve on the bare bones versions in this demo.*
