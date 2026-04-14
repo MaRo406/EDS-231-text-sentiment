@@ -225,7 +225,7 @@ tokenized %>%
 
 1.  Create a free New York Times account (<https://developer.nytimes.com/get-started>)
 
-    -   Once you have finished this process, you'll have an API key. As a manner of best practice, store this key as an environment variable so it's not visible in your final products:
+    -   Once you have finished this process, you'll have an API key. As a matter of best practice, store this key as an environment variable so it's not visible in your final products:
 
         -   `usethis::edit_r_environ()`
 
@@ -239,6 +239,8 @@ tokenized %>%
 
 -   Make some (at least 2) clarifying transformations to the corpus (simplify possessives, remove numbers, remove empty tokens, add context-specific stopword(s))
 
-4.  Recreate the publications per day and word frequency plots using the headlines variable (response.docs.headline.main). Compare the distributions of word frequencies between the snippet and headlines. Do you see any difference?
+4.  Recreate the publications per day and word frequency plots again, this time using the headlines variable (response.docs.headline.main). Compare the distributions of word frequencies between the snippet and headlines. Do you see any difference?
+
+5.  Submit your final lab to Canvas as both an .Rmd and final knit product (PDF or html).
 
 *\*\*Remember that complete assignments require readable, informative, aesthetically pleasing visualizations. You'll have to improve on the bare bones versions in this demo.*
