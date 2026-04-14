@@ -1,0 +1,70 @@
+---
+title: "Week 3: Stemming, Domain Stopwords, and Nexis Uni"
+subtitle: "EDS 231 — Spring 2026"
+date: 
+output:
+  html_document:
+    theme: flatly
+    highlight: pygments
+    css: week-styles.css
+    toc: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> Nexis Uni data.
+
+---
+
+### Learning Objectives
+
+By the end of this week, you will be able to: -->
+
+ - Clean raw corpus text — removing URLs, encoding artifacts, and source-specific boilerplate 
+ - Build domain-specific stopword lists — identifying and removing corpus-specific uninformative terms beyond
+  standard lexicons
+ - Apply stemming and lemmatization — reducing tokens to base forms using the Porter stemmer and
+  dictionary-based lemmatization, and evaluate the tradeoffs between them
+ - Conduct frequency analysis — counting and visualizing term frequency across the full corpus and by source
+ - Perform keyness analysis — comparing word use across sub-corpora using log-likelihood (G²) with quanteda to
+  identify characteristic terms
+
+---
+
+### Recommended Reading
+
+📖  [SMLTR Ch.4](https://smltar.com/stemming)
+
+---
+
+## Lecture Materials
+
+### Slides
+
+🖥 Slide deck from lecture
+
+[View Slides]() 
+
+### Code & Data
+
+💻 R scripts used during class:
+
+[Lab 2 In-class Markdown](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab2.Rmd)
+
+---
+
+## 📂 Assignments
+
+### Lab 2 — Nexis Uni Data Center Discourse <span class="badge badge-danger">Graded · 11 pts</span>
+
+
+**Due: April 21 @ 11:59 pm**
+
+Complete the assignment laid out at the end of the Lab 2 in-class doc (parts 7. and 8.). Submit your .Rmd and knitted document (HTML or PDF) to Canvas.
+
+---
