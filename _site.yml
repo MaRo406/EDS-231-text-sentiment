@@ -13,8 +13,8 @@ navbar:
           href: week-1.html
         - text: "Week 2: NYT API"
           href: week-2.html
-    #     # - text: "Topic 3: Add images"
-    #     #   href: topic_3.html
+        - text: "Week 3: Nexis Uni"
+          href: week-3.html
     #     # - text: "Topic 4: Change the theme"
     #     #   href: topic_4.html
     #     # - text: "Topic 5: Basic formatting"
