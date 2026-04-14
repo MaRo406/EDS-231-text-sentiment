@@ -1,10 +1,10 @@
 ---
 title: "Week 3: Nexis Uni"
 subtitle: "EDS 231 — Spring 2026"
-date: 
+date: "April 7, 2026"
 output:
   html_document:
-    theme: flatly
+    theme: bootstrap
     highlight: pygments
     css: week-styles.css
     toc: false
