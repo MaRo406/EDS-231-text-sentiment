@@ -1,0 +1,442 @@
+---
+title: "Lab 2: Text Analysis of Nexis Uni Data"
+subtitle: "Data Center News Coverage"
+date: "`r Sys.Date()`"
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 9,
+  fig.height = 5,
+  fig.align = "center"
+)
+```
+
+## Overview
+
+In this lab you will work with a corpus of news articles about data centers. They were written in the first 6 months of either 2021 or 2025 and retrieved from Nexis Uni and processed with the `LexisNexisTools` package. You will practice:
+
+-   Loading and inspecting a structured news corpus
+-   Tokenization, stemming, and lemmatization
+-   Building and applying domain-specific stopword lists
+-   Frequency analysis and visualization
+-   Keyness analysis to compare sub-corpora
+
+**Packages used:**
+
+```{r packages}
+library(tidyverse)      # data wrangling and plotting
+library(tidytext)       # text mining in tidy format
+#library(LexisNexisTools) # reading Nexis Uni .docx exports
+library(SnowballC)      # Porter stemmer
+library(textstem)       # lemmatization
+library(scales)         # axis formatting
+library(lubridate)      # date handling
+library(quanteda)       # corpus and DFM construction
+library(quanteda.textstats) # textstat_keyness()
+library(quanteda.textplots) # textplot_keyness()
+```
+
+------------------------------------------------------------------------
+
+## 1. Load and Inspect the Corpus
+
+Today's example uses data from Nexis Uni (formerly LexisNexis), a news and full-text publications database accessible through the UCSB library. We'll examine media coverage of data center construction.
+
+I used the `{LexisNexisTools}` package to parse `.docx` exports from Nexis. It returns an "S4" object with three slots accessed via `@`:
+
+-   `@meta` — article-level metadata (date, headline, newspaper)
+-   `@articles` — full article text
+-   `@paragraphs` — paragraph-level text
+
+```{r load-data}
+# pre_files <- list.files(
+#   path = here::here("Nexis", "data-center"),
+#   pattern = "\\.docx$",
+#   full.names = TRUE,
+#   recursive = TRUE,
+#   ignore.case = TRUE
+# )
+# 
+# pre_dat <- lnt_read(pre_files)
+# 
+# pre_meta_df       <- pre_dat@meta
+# pre_articles_df   <- pre_dat@articles
+# pre_paragraphs_df <- pre_dat@paragraphs
+# 
+# df <- tibble(
+#   date     = pre_meta_df$Date,
+#   headline = pre_meta_df$Headline,
+#   id       = pre_meta_df$ID,
+#   text     = pre_articles_df$Article,
+#   source   = pre_meta_df$Newspaper
+# )
+
+url <- "https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/refs/heads/main/data/nexis-dat.csv"
+df <- read_csv(url)
+```
+
+### 1.1 Cleaning the raw text
+
+Before any analysis, the raw Nexis export needs cleaning. Each step below addresses a specific artifact of how Nexis packages its data:
+
+```{r clean-text}
+# Drop articles with no date — these are often metadata rows, not real articles
+df <- df[!is.na(df$date), ]
+
+# Remove URLs — Nexis embeds source URLs inline in the text body
+df$text <- gsub("https?\\S+", "", df$text)
+
+# Convert to ASCII — Nexis exports sometimes include curly quotes, em-dashes,
+# and other Unicode characters that cause issues in tokenization
+df$text <- iconv(df$text, to = "ASCII//TRANSLIT", sub = "")
+
+# Also, remove possessives
+df$text <- gsub("'s\\b", "", df$text, ignore.case = TRUE)
+```
+
+**Always good to do a quick inspection:**
+
+```{r inspect}
+glimpse(df)
+cat("\nDate range:", format(min(df$date)), "to", format(max(df$date)), "\n")
+cat("Unique sources:", n_distinct(df$source), "\n")
+cat("Total articles:", nrow(df), "\n")
+```
+
+```{r articles-per-source}
+df |>
+  count(source, sort = TRUE) |>
+  filter(n > 10, source != "") |>
+  ggplot(aes(x = reorder(source, n), y = n)) +
+  geom_col(fill = "#2c7bb6") +
+  coord_flip() +
+  labs(title = "Articles by Source",
+       x = NULL, y = "Article count") +
+  theme_minimal(base_size = 13)
+```
+
+------------------------------------------------------------------------
+
+## 2. Tokenization
+
+The core `tidytext` workflow converts documents into a **one-token-per-row** format using `unnest_tokens()`. This makes every subsequent step a standard `dplyr` pipeline ##— you can filter, join, and count tokens using the same verbs you already know.##
+
+```{r tokenize}
+tokens <- df |>
+  select(id, date, source, text) |> #basically just leaving out headline here
+  unnest_tokens(
+    output = word,    # name of the new token column
+    input  = text,    # column containing text
+    token  = "words"  # tokenize by word (also: "sentences", "ngrams")
+  )
+
+glimpse(tokens)
+cat("\nTotal tokens:", nrow(tokens), "\n")
+cat("Unique tokens:", n_distinct(tokens$word), "\n")
+```
+
+**Discussion:** What does `unnest_tokens()` do to case and punctuation by default?
+
+<!-- **Answer:** It lowercases all tokens and strips punctuation. The implication is that "Data", "data", and "DATA" all become the same token — which is usually what you want, but means you lose information about proper nouns and sentence-initial capitalization. Punctuation removal means contractions like "don't" become "don" and "t", so pre-tokenization cleaning  matters. barry divine? (like replacing periods above) -->
+
+------------------------------------------------------------------------
+
+## 3. Stopword Removal
+
+### 3.1 Standard Stopwords
+
+Recall that `tidytext` ships with several stopword lexicons via `get_stopwords()`. The most comprehensive built-in option is the SMART list, which covers around 570 high-frequency function words and is well-suited for news and document analysis.
+
+```{r standard-stopwords}
+standard_sw <- get_stopwords(source = "smart", )
+
+tokens_clean <- tokens |>
+  anti_join(standard_sw, by = "word")
+
+cat("Tokens after standard stopword removal:", nrow(tokens_clean), "\n")
+```
+
+### 3.2 Domain-Specific Stopwords
+
+Standard lists were built for general text. News about data centers will include high-frequency words that are uninformative for *your* research questions — boilerplate legal language, news wire attributions, and domain-generic terms.
+
+> **Methodological note:** Your stopword choices are *analytical decisions*, not neutral preprocessing. Document them and be prepared to justify them. A word that is uninformative for one research question may be the key signal for another.
+
+**Step 1: Look at what's still most frequent after standard stopword removal.**
+
+```{r inspect-freq}
+tokens_clean |>
+  count(word, sort = TRUE) |>
+  slice_head(n = 30) |>
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "#d7191c") +
+  coord_flip() +
+  labs(title = "Top 30 Words (after standard stopwords)",
+       x = NULL, y = "Count") +
+  theme_minimal(base_size = 12)
+```
+
+**Step 2: Build a domain stopword list from what you observe.**
+
+Look at the plot above. Add words that are frequent but analytically uninformative for your research question. Can you identify anthing that we should remove?
+
+<!-- -   Attribution words: *said*, *says*, *told*, *according* -->
+
+<!-- -   Generic news terms: *company*, *year*, *percent*-->
+
+<!-- -   Data center boilerplate: *data*, *center*, *centers* (if you want to analyze what's *around* the topic, not the topic label itself) -->
+
+```{r domain-stopwords}
+domain_sw <- tibble(word = c(
+  # News wire / attribution boilerplate
+  "said", "says", "told", "according", "reported", "noted", "added",
+  "stated", "announced", "mr", "ms", "inc", "corp", "llc",
+  # Generic quantitative terms ##(adjust based on your research question)
+  "year", "years", "percent", "million", "billion", "quarter",
+  "company", "companies", "firm", "business",
+  # Consider whether these are substantive for your RQ:
+  "data", "center", "centers"  # usually want to analyze words around the key terms, not the terms themselves
+))
+
+tokens_clean2 <- tokens_clean |>
+  anti_join(domain_sw, by = "word") |>
+  filter(
+    !str_detect(word, "^[0-9]+$"),  # remove pure numbers, ^ is start string, $ is end, [0-9]+ is one or more digits ([0-9] is character class meaning digit, + means 1 or more)
+    str_length(word) > 2            # remove very short tokens
+  )
+
+cat("Tokens after domain stopword removal:", nrow(tokens_clean2), "\n")
+cat("Reduction from raw:", scales::percent(1 - nrow(tokens_clean2) / nrow(tokens)), "\n") #little trick to turn this into a string
+```
+
+**Exercise:** Inspect the frequency plot again after domain stopword removal. Are there additional terms you would add? What is your criterion for inclusion?
+
+------------------------------------------------------------------------
+
+## 4. Stemming and Lemmatization
+
+Both stemming and lemmatization reduce words to a base form to consolidate variant spellings. They differ in approach and output.
+
+### 4.1 Stemming (Porter Stemmer)
+
+```{r stemming}
+tokens_stemmed <- tokens_clean2 |>
+  mutate(stem = wordStem(word, language = "english"))
+
+# Compare original tokens to their stems
+tokens_stemmed |>
+  filter(word != stem) |>
+  distinct(word, stem) |>
+  slice_head(n = 20) |>
+  knitr::kable(caption = "Sample: original tokens vs. stems")
+```
+
+Look at the stem column. Do any stems look wrong or ambiguous?
+
+### 4.2 Lemmatization
+
+```{r lemmatization}
+tokens_lemmatized <- tokens_clean2 |>
+  mutate(lemma = lemmatize_words(word))
+
+# Compare
+tokens_lemmatized |>
+  filter(word != lemma) |>
+  distinct(word, lemma) |>
+  slice_head(n = 20) |>
+  knitr::kable(caption = "Sample: original tokens vs. lemmas")
+```
+
+**Compare the two approaches on a specific word family:**
+
+```{r compare-approaches}
+comparison_words <- c("operating", "operated", "operations", "operator", "operators",
+                      "building", "built", "builds", "build")
+
+tokens_clean2 |>
+  filter(word %in% comparison_words) |>
+  mutate(
+    stem  = wordStem(word),
+    lemma = lemmatize_words(word)
+  ) |>
+  distinct(word, stem, lemma) |>
+  arrange(word) |>
+  knitr::kable(caption = "Stemming vs. lemmatization comparison")
+```
+
+**Question:** Which approach would you choose for this corpus, and why? *Consider your downstream analysis tasks — frequency counts benefit from lemmatization (real words are easier to interpret), while keyness analysis is less sensitive to the choice since both corpora are treated the same way.*
+
+For the rest of this lab we will use **lemmatized** tokens.
+
+```{r set-working-tokens}
+working_tokens <- tokens_lemmatized |>
+  mutate(word = lemma) |>
+  select(-lemma)
+```
+
+------------------------------------------------------------------------
+
+## 5. Frequency Analysis
+
+### 5.1 Overall Frequency
+
+```{r freq-plot}
+top_words <- working_tokens |>
+  count(word, sort = TRUE) |>
+  slice_head(n = 30)
+
+top_words |>
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "#1a9641") +
+  coord_flip() +
+  labs(
+    title = "30 Most Frequent Terms — Data Center Corpus",
+    subtitle = "After stopword removal and lemmatization",
+    x = NULL,
+    y = "Frequency"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+### 5.2 Frequency by Source
+
+Raw frequency across the whole corpus can mask differences between outlets. This plot shows each source's top 10 terms independently — useful for spotting whether specific publications drive particular terms in the overall frequency list.
+
+```{r freq-by-source}
+top_sources <- df |>
+  count(source, sort = TRUE) |>
+  slice_max(n, n = 10) |> #select rows with largest values
+  pull(source) #extract source column only
+
+working_tokens |>
+  filter(source %in% top_sources) |>
+  count(source, word, sort = TRUE) |> #ungroup,transform,group allows calculations but maintain row structure
+  group_by(source) |>
+  slice_max(n, n = 10) |>
+  ungroup() |>
+  ggplot(aes(x = reorder_within(word, n, source), y = n, fill = source)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~source, scales = "free_y") +
+  scale_x_reordered() +
+  coord_flip() +
+  labs(title = "Top 10 Terms by Source", x = NULL, y = "Count") +
+  theme_minimal(base_size = 10)
+```
+
+------------------------------------------------------------------------
+
+## 6. Keyness Analysis
+
+Frequency tells us which words are common. Keyness tells us which words are *characteristic* — more common in one sub-corpus than you would expect given their overall rate. A word can be infrequent overall but highly distinctive of a particular group.
+
+We use `quanteda` for this because `tidytext` doesn't implement keyness statistics natively. `quanteda` represents text as a **document-feature matrix (DFM)** — the wide-format equivalent of the long tidy token table we've been using.
+
+### 6.1 Build a corpus and DFM
+
+```{r build-dfm}
+# Build corpus — quanteda uses character doc IDs, so id (integer) is coerced
+corp <- corpus(df, docid_field = "id", text_field = "text") #Where our tidy tokens had one row per token, a DFM has one row per document and one column per unique token, with cell values being token counts.
+
+# Create a new document variable (year) from date
+docvars(corp, "year") <- format(df$date, "%Y")
+
+# Tokenize inside quanteda: remove punctuation, numbers, symbols with (remove_*); lowercase 
+toks <- tokens(corp,
+               remove_punct   = TRUE,
+               remove_numbers = TRUE,
+               remove_symbols = TRUE) |>
+  tokens_tolower() |>
+  tokens_remove(stopwords("en", source = "smart") ) #
+
+# Build DFM and drop any documents with no date
+dfmat <- dfm(toks)
+dfmat <- dfmat[!is.na(docvars(dfmat, "year")), ]
+
+cat("DFM dimensions:", nrow(dfmat), "documents ×", ncol(dfmat), "features\n")
+```
+
+### 6.2 Define target and reference sub-corpora
+
+We compare 2021 coverage against 2025 coverage. This span captures the period just before and after large-scale AI infrastructure investment became a dominant news frame — the launch of ChatGPT (late 2022) and subsequent hyperscaler announcements sit in between. You could equally split by source, geographic region, or any other variable in `docvars`.
+
+```{r define-groups}
+cat("2021 articles:", sum(docvars(dfmat, "year") == "2021"), "\n")
+cat("2025 articles:", sum(docvars(dfmat, "year") == "2025"), "\n")
+
+# Collapse DFM to two rows — one per year value
+dfmat_grouped <- dfm_group(dfmat, groups = year)
+```
+
+### 6.3 Compute and plot keyness
+
+`textstat_keyness()` defaults to `measure = "chi2"`. We use `measure = "lr"` (log-likelihood ratio, G²) because it handles sparse counts better than χ².
+
+```{r compute-keyness}
+result <- textstat_keyness(dfmat_grouped,
+                           target  = "2025",
+                           measure = "lr")
+
+textplot_keyness(result, n = 20) +
+  labs(
+    title = "Keyness: Data Center Coverage",
+    subtitle = "Target: 2025  |  Reference: 2021  |  Statistic: Log-Likelihood (G²)"
+  )
+```
+
+------------------------------------------------------------------------
+
+*Create a new .Rmd file for your submission. Use the lab code as a reference, but your submission should contain only your own analysis — not the demo walkthrough. For the submission, answer each of the questions in part 7 and part 8 below.*
+
+## 7. Interpretive questions:
+
+1.  What do the most positive keywords (overrepresented in 2025) tell you about how data center coverage has shifted?
+
+    *Your answer here*
+
+2.  Are any of these keywords surprising? What might explain their appearance?
+
+    *Your answer here*
+
+3.  Keyness flags statistical unusualness, not substantive importance. A high-G² word could be driven by a single prolific source or a short news spike. How would you check whether a keyword is genuinely distributed across the corpus rather than concentrated in one place?
+
+    *Your answer here*
+
+4.  How has the language used to describe data centers in news coverage changed over time, and what does that suggest about the evolving journalistic frame around the issue?
+
+    *Your answer here*
+
+------------------------------------------------------------------------
+
+## 8. Exercises
+
+1.  **Stopword sensitivity:** Remove *all* domain-specific stopwords and re-run the frequency plot. Then add 10 more domain stopwords beyond what was provided. How do your results change? What does this tell you about the analytical choices embedded in preprocessing?
+
+    *Your answer here*
+
+    ```{r stopword-sensitivity}
+
+    ```
+
+2.  **Alternative keyness comparison:** Instead of comparing time periods, compare the two sources with the most articles. What does keyness reveal about how each publication frames the data center beat?
+
+    *Your answer here*
+
+    ```{r alternative-keyness}
+
+    ```
+
+3.  **Bigrams:** Use `unnest_tokens(token = "ngrams", n = 2)` to extract bigrams. What are the 20 most frequent bigrams? Do they reveal entities or conceptual phrases that single-token analysis misses?
+
+    *Your answer here*
+
+    ```{r bigrams}
+
+    ```
+
+------------------------------------------------------------------------

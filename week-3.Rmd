@@ -1,5 +1,5 @@
 ---
-title: "Week 3: Stemming, Domain Stopwords, and Nexis Uni"
+title: "Week 3: Nexis Uni"
 subtitle: "EDS 231 — Spring 2026"
 date: 
 output:
@@ -60,7 +60,7 @@ By the end of this week, you will be able to: -->
 
 ## 📂 Assignments
 
-### Lab 2 — Nexis Uni Data Center Discourse <span class="badge badge-danger">Graded · 11 pts</span>
+### Lab 2 — Text Analysis of Nexis Uni Data <span class="badge badge-danger">Graded · 11 pts</span>
 
 
 **Due: April 21 @ 11:59 pm**
