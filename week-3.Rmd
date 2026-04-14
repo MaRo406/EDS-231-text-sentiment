@@ -48,7 +48,7 @@ By the end of this week, you will be able to: -->
 
 🖥 Slide deck from lecture
 
-[View Slides]() 
+[View Slides](https://ucsb.box.com/s/il7t6qsadziwogdeffj74bgomcqj3lj6) 
 
 ### Code & Data
 
