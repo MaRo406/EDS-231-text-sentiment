@@ -15,8 +15,8 @@ navbar:
           href: week-2.html
         - text: "Week 3: Nexis Uni"
           href: week-3.html
-    #     # - text: "Topic 4: Change the theme"
-    #     #   href: topic_4.html
+        - text: "Week 4: Sentiment Analysis I"
+          href: week-4.html
     #     # - text: "Topic 5: Basic formatting"
     #     #   href: topic_5.html
     #     # - text: "Topic 6: Internal & external links"
