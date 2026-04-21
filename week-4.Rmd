@@ -54,7 +54,7 @@ By the end of this week, you will be able to:
 
 💻 R scripts used during class:
 
-[Lab 3 In-class Markdown]()
+[Lab 3 Markdown](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab3.Rmd)
 
 ---
 

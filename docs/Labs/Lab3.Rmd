@@ -1,0 +1,304 @@
+---
+title: "Lab 4: Lexicon-Based Sentiment Analysis with Bluesky Data"
+output: html_document:
+          theme: cosmo
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+## Overview
+
+In this lab we'll collect posts from Bluesky Social using the `{atrrr}` package and apply lexicon-based sentiment analysis tools — the same tools we covered in lecture (VADER via `{vader}`, `{sentimentr}`, and `{tidytext}` lexicons). By the end you'll have a working pipeline from API call to sentiment scores, and you'll have a concrete sense of where these tools succeed and where they fall short. We'll walk through some of this in class with sample data, then you'll be responsible for completing it with your own data set for the assignment.
+
+---
+
+## Setup
+
+### 1. Create a Bluesky account and app password (you'll do this your assignment)
+
+<!-- You need a free Bluesky account at [bsky.app](https://bsky.app). Once logged in: -->
+
+<!-- 1. Go to **Settings → Privacy and Security → App Passwords** -->
+<!-- 2. Click **Add App Password**, give it a name (e.g., "eds231-lab"), and copy the generated password: -->
+
+
+<!-- Store your credentials in `.Renviron`: -->
+
+<!-- ```{r renviron, eval=FALSE} -->
+<!-- # Run this once in the console — do NOT put it in your .Rmd -->
+<!-- usethis::edit_r_environ() -->
+<!-- ``` -->
+
+<!-- Add these two lines to the file that opens, then save and restart R: -->
+
+<!-- ``` -->
+<!-- BSKY_USER=yourhandle.bsky.social -->
+<!-- BSKY_PASS=xxxx-xxxx-xxxx-xxxx -->
+<!-- ``` -->
+
+### 2.Packages
+
+```{r install, eval=FALSE}
+install.packages(c("atrrr", "tidyverse", "tidytext", "sentimentr", "remotes"))
+
+# tidyvader isn't on CRAN:
+#install.packages("devtools")
+devtools::install_github("chris31415926535/tidyvader")
+
+
+```
+
+```{r load}
+library(atrrr)
+library(tidyverse)
+library(tidytext)
+library(sentimentr)
+library(remotes)
+```
+
+---
+
+## Part 1: Authenticate and Pull Posts
+
+<!-- Authenticate once at the top of your session. The package caches your token so you won't hit login rate limits. -->
+
+<!-- ```{r auth} -->
+<!-- auth( -->
+<!--   user = Sys.getenv("BSKY_USER"), -->
+<!--   pass = Sys.getenv("BSKY_PASS") -->
+<!-- ) -->
+<!-- ``` -->
+
+Now search for posts on an environmental keyword. We'll use `"climate change"` as the default — feel free to swap in another term relevant to your interests.
+
+```{r search}
+# raw_posts <- search_post("climate change", limit = 1000) #you'll do this later
+
+raw_posts <- read.csv("https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/refs/heads/main/data/bluesky_climate_raw.csv")
+
+```
+
+
+Take a look at what came back:
+
+```{r explore}
+glimpse(raw_posts)
+```
+
+The key columns for our purposes are `text` (post content) and `uri` (unique identifier), and engagement metrics like `like_count` and `reply_count`.
+
+---
+
+## Part 2: Clean and Prepare Text
+
+Pull out the columns we need and do basic cleaning.
+
+```{r clean}
+posts <- raw_posts %>%
+  select(uri, indexed_at, text, like_count, reply_count, repost_count) %>%
+  mutate(
+    indexed_at = as.POSIXct(indexed_at), #who can tell me how to 
+    post_date  = as.Date(indexed_at),
+    text_clean = str_remove_all(text, "https?\\S+"), #remove URLs
+    text_clean = str_remove_all(text_clean, "@\\S+"),#remove mentions
+  ) %>%
+  filter(nchar(text_clean) > 10)
+```
+
+How many posts do we have?
+
+```{r count}
+```
+
+---
+
+## Part 3: Word Frequency
+
+Before running any sentiment analysis, look at what words are actually in the data and plot the most frequent.
+
+```{r word-freq}
+# pass 1: standard stop words
+data("stop_words")
+
+tokens_clean <- 
+
+# pass 2: custom stop words and additional cleaning
+custom_sw <- tibble(word = c(
+  # search terms
+  "climate", "change"
+  # other common but uninformative text?
+))
+
+tokens_clean2 <- tokens_clean %>%
+  anti_join(custom_sw, by = "word")
+
+# word frequency plot
+
+word_counts <-
+
+word_counts %>%
+```
+
+
+## Part 4: Sentiment Analysis
+
+> **Note:** If you need to re-run any chunk in this section, run `rm(posts)` in the console first and re-run from Part 2. This avoids duplicate column errors.
+
+### 4a. Bing lexicon (word-level)
+
+Use `get_sentiments("bing")` to load the lexicon, then tokenize with `unnest_tokens()`, join to the lexicon with `inner_join()`, and compute a net score (positive word count minus negative word count) per post. Join the scores back onto `posts` with `left_join()`.
+
+```{r bing}
+#score posts with Bing
+bing_scores <- posts %>%
+
+#join scores to posts  
+posts <- posts %>%
+
+```
+
+### 4b. AFINN lexicon (numeric scores)
+
+Load with `get_sentiments("afinn")`. Unlike Bing, each matched word carries an integer value (−5 to +5), so summarize by summing those values within each post using `group_by()` and `summarise()`.
+
+```{r afinn}
+# You will be prompted to download the AFINN lexicon the first time —
+# run this line in the console and select Yes, then it will be cached locally
+afinn <- get_sentiments("afinn")
+
+#score text
+afinn_scores <- posts %>%
+
+#join scores to posts  
+posts <- posts %>%
+
+```
+
+### 4c. NRC lexicon (emotion categories)
+
+The NRC lexicon tags words with 8 emotions (anger, fear, anticipation, trust, surprise, sadness, joy, disgust) plus positive/negative. Now  count emotion words per post and visualize which emotions dominate the corpus.
+
+```{r nrc}
+nrc <- get_sentiments("nrc")
+
+#plot
+nrc_scores <- posts %>%
+
+#join scores to post
+posts <- posts %>%
+ 
+```
+
+Which emotions dominate the corpus? Plot the count of total scored words for each of the 8 emotions.
+
+```{r nrc-plot}
+nrc_scores %>%
+```
+
+What words are driving each emotion? Create plots of the top 10 words for each emotion (hint: ggplot and `facet_wrap(~sentiment)`).
+
+```{r nrc-top-words}
+posts %>%
+```
+
+### 4d. sentimentr (sentence-aware)
+
+Unlike the word-level lexicons above, `{sentimentr}` scores at the sentence level and handles valence shifters like negation — "not alarming" won't score the same as "alarming." Pass the full `text_clean` vector to `sentiment_by()`. Rename the resulting `ave_sentiment` to `sr_scores` and join back onto `posts` by row index. I'll give you this code as we haven't fully covered this yet.
+
+```{r sentimentr}
+sr_scores <- sentiment_by(posts$text_clean) %>%
+  select(element_id, ave_sentiment) %>%
+  rename(sr_score = ave_sentiment) %>%
+  mutate(element_id = as.integer(element_id))
+
+posts <- posts %>%
+  mutate(element_id = row_number()) %>%
+  left_join(sr_scores, by = "element_id")
+```
+
+### 4e. VADER
+
+VADER scores the full post text (no tokenization needed) and returns four values: `pos`, `neu`, `neg`, and `compound`. Use `tidyvader::vader()` on the `text_clean` column — it mutates the result directly onto the dataframe. Keep only the `compound` score and drop the component columns.
+
+Let's run VADER on a single post manually before applying it to the whole dataset:
+
+```{r vader-demo}
+# look at a few posts
+posts %>% select(text_clean) %>% slice(1:10)
+
+# run VADER on one post — swap in whichever row looks interesting to you
+posts$text_clean[3]
+tidyvader::vader_chr(posts$text_clean[3])
+```
+
+What did VADER catch? What did it miss? How does the compound score relate to the word-level scores?
+
+Now score all the posts with VADER.  Rename it's default scoring column to `vader_score`.
+---
+```{r vader}
+posts <- posts %>%
+```
+
+---
+
+## Part 5: Compare the Methods
+
+### Correlations 
+Let's see to what extent the 4 numerical methods (bing, afinn, sr, and vader) are in agreement. Select the 4 scores and use `cor()` using "complete.obs".
+
+```{r correlations}
+posts %>%
+```
+
+### Score distributions
+
+Use `pivot_longer()` to reshape the four score columns into a single `score` column with a `method` identifier, then plot with `geom_histogram()` and `facet_wrap()`.
+
+```{r distributions}
+posts %>%
+
+```
+
+**Question 1:** Do the four methods broadly agree or disagree? Where do you see the biggest differences in the distributions? Which method produces the most zeros, and why?
+
+---
+
+## Part 6: Spot-Check for Misclassification
+
+Find posts where the methods disagree most — these are the best candidates for understanding failure modes. Use `mutate()` to create binary flags from the continuous scores, then `filter()` for posts where the two methods point in opposite directions.
+
+```{r disagreements}
+posts %>%
+```
+
+To rank posts by total disagreement, compute the absolute difference between the two scores with `abs()`, then `arrange(desc(...))` to surface the highest-conflict posts.
+
+```{r high-conflict}
+posts %>%
+
+```
+
+**Question 2:** Read through 5 of the high-conflict posts. For each one, write a sentence explaining which method you think is closer to correct and why.
+
+**Question 3:** Based on everything you've run, which method would you choose if you were delivering a report onpublic sentiment around your topic, and why? What additional steps would you take to validate your choice?
+---
+
+## Bonus: Engagement vs. Sentiment (completion optional)
+
+Do more emotionally charged posts get more engagement? Use `abs()` on the VADER compound score to capture emotional intensity regardless of direction, apply `log1p()` to `like_count` to handle the skewed distribution, and add `geom_smooth(method = "lm")` to visualize the trend.
+
+```{r engagement}
+posts %>%
+
+```
+
+**Bonus:** Is there a relationship between sentiment intensity and engagement? What does that suggest about what gets amplified on Bluesky?
+
+---
+
+
+
+
