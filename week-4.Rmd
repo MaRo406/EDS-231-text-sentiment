@@ -1,0 +1,81 @@
+---
+title: "Week 4: Lexicon-Based Sentiment Analysis"
+subtitle: "EDS 231 — Spring 2026"
+date: "April 14, 2026"
+output:
+  html_document:
+    theme: bootstrap
+    highlight: pygments
+    css: week-styles.css
+    toc: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> Lexicon-based sentiment analysis applied to Bluesky social media data.
+
+---
+
+### Learning Objectives
+
+By the end of this week, you will be able to:
+
+ - Authenticate with a social media API and retrieve posts by keyword using `{atrrr}`
+ - Clean and tokenize social media text for downstream sentiment analysis
+ - Apply and interpret multiple lexicon-based sentiment methods
+ - Identify common failure modes of general-purpose lexicons on domain-specific environmental text
+ - Compare method outputs using correlation matrices and distribution visualizations
+ - Evaluate which method is most appropriate for a given corpus and research question
+
+---
+
+### Recommended Reading
+
+📖  [SMLTR Ch. 2 — Sentiment Analysis](https://smltar.com/sentiment)
+
+📖  [Text Mining with R — Ch. 2: Sentiment Analysis with Tidy Data](https://www.tidytextmining.com/sentiment)
+
+---
+
+## Lecture Materials
+
+### Slides
+
+🖥 Slide deck from lecture
+
+[View Slides](https://ucsb.box.com/s/lrppb4ei4o5fdq0xtstumx891yit7fje)
+
+### Code & Data
+
+💻 R scripts used during class:
+
+[Lab 3 In-class Markdown]()
+
+---
+
+### 📦 Packages
+
+New packages introduced this week:
+
+| Package | Purpose | Install |
+|---|---|---|
+| `atrrr` | Bluesky (AT Protocol) API client — search posts, authenticate, retrieve feeds | `install.packages("atrrr")` |
+| `sentimentr` | Sentence-level sentiment scoring with valence shifters (negation, amplifiers) | `install.packages("sentimentr")` |
+| `tidyvader` | Tidy interface to the VADER sentiment lexicon, optimized for social media text | `remotes::install_github("chris31415926535/tidyvader")` |
+
+---
+
+## 📂 Assignments
+
+### Lab 3 — Lexicon-Based Sentiment Analysis with Bluesky Data <span class="badge badge-danger">Graded · 11 pts</span>
+
+**Due: April 28 @ 11:59 pm**
+
+Complete the assignment laid out in the Lab 3 markdown. Submit your .Rmd and knitted HTML to Canvas. Make sure your Bluesky credentials are stored in `.Renviron` and do not appear anywhere in your submitted file.  Look your knitted product over before submission to make sure all plots rendered and extraneous print-outs did not render.
+
+---

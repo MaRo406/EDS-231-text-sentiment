@@ -39,6 +39,14 @@
       "last_modified": "2026-04-14T11:21:47-07:00"
     },
     {
+      "path": "week-4.html",
+      "title": "Week 4: Lexicon-Based Sentiment Analysis",
+      "author": [],
+      "date": "April 14, 2026",
+      "contents": "\n\n\n\n\n\n\n\n\nEDS 231\n\n\nHome\n\n\nMaterials\n \n▾\n\n\nWeek 1: Intro\nWeek 2: NYT API\nWeek 3: Nexis Uni\n\n\n\n\n\n☰\n\n\n  \n    \n      \n        \n        \n        \n      \n      \n    \n    \n      \n  Home\n\n\n  \n    Materials\n     \n    \n  \n  \n      Week 1: Intro\n    \n    \n      Week 2: NYT API\n    \n    \n      Week 3: Nexis Uni\n    \n  \n\n  \n    \n     \n  \n\n      \n  \n\n\n\n\n\n\nWeek 4: Lexicon-Based Sentiment\nAnalysis\nEDS 231 — Spring 2026\nApril 14, 2026\n\n\n\n\n\nLexicon-based sentiment analysis applied to Bluesky social media\ndata.\n\n\nLearning Objectives\nBy the end of this week, you will be able to:\nAuthenticate with a social media API and retrieve posts by keyword\nusing {atrrr}\nClean and tokenize social media text for downstream sentiment\nanalysis\nApply and interpret multiple lexicon-based sentiment methods\nIdentify common failure modes of general-purpose lexicons on\ndomain-specific environmental text\nCompare method outputs using correlation matrices and distribution\nvisualizations\nEvaluate which method is most appropriate for a given corpus and\nresearch question\n\n\nRecommended Reading\n📖 SMLTR Ch. 2 — Sentiment\nAnalysis\n📖 Text Mining\nwith R — Ch. 2: Sentiment Analysis with Tidy Data\n\n\nLecture Materials\n\nSlides\n🖥 Slide deck from lecture\nView\nSlides\n\n\nCode & Data\n💻 R scripts used during class:\nLab 3 In-class Markdown\n\n\n📦 Packages\nNew packages introduced this week:\nPackage\nPurpose\nInstall\natrrr\nBluesky (AT Protocol) API client — search posts, authenticate,\nretrieve feeds\ninstall.packages(\"atrrr\")\nsentimentr\nSentence-level sentiment scoring with valence shifters (negation,\namplifiers)\ninstall.packages(\"sentimentr\")\ntidyvader\nTidy interface to the VADER sentiment lexicon, optimized for social\nmedia text\nremotes::install_github(\"chris31415926535/tidyvader\")\n\n\n\n📂 Assignments\n\nLab 3 — Lexicon-Based Sentiment Analysis with Bluesky Data Graded · 11 pts\nDue: April 28 @ 11:59 pm\nComplete the assignment laid out in the Lab 3 markdown. Submit your\n.Rmd and knitted HTML to Canvas. Make sure your Bluesky credentials are\nstored in .Renviron and do not appear anywhere in your\nsubmitted file. Look your knitted product over before submission to make\nsure all plots rendered and extraneous print-outs did not render.\n\n\n\n\n\n\n\n\n\n\n\n  This website was made with distill by RStudio.\n\n\n\n\n\n\n\n\n\n",
+      "last_modified": "2026-04-20T15:51:21-07:00"
+    },
+    {
       "path": "week-template.html",
       "title": "Week XX: Week Title",
       "author": [],
