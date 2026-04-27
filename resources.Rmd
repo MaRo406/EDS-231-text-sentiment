@@ -1,0 +1,156 @@
+---
+title: "Resources"
+subtitle: "EDS 231 — Text & Sentiment Analysis for Environmental Problems"
+output:
+  html_document:
+    theme: bootstrap
+    highlight: pygments
+    css: week-styles.css
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+---
+
+## Environmental Data Sources
+
+### Used in This Course
+
+| Source | Description | Access | Used In |
+|---|---|---|---|
+| [New York Times API](https://developer.nytimes.com/) | Full-text article search across the NYT archive. Returns metadata, snippets, and article URLs via JSON. Free with registration; rate-limited. | API key via NYT Developer Portal | Lab 1 |
+| [Nexis Uni](https://www.library.ucsb.edu/) | Licensed news and publication database with full-text exports in `.docx` format. Covers thousands of outlets globally. | UCSB Library login | Labs 2 & 4 |
+| [Bluesky / AT Protocol](https://bsky.app) | Decentralized social media platform. The `{atrrr}` package provides a tidy R interface for searching posts by keyword, hashtag, or user. | Free account + app password | Lab 3 |
+
+---
+
+## Key Readings
+
+Studies applying text and sentiment analysis to environmental research questions. Organized thematically.
+
+### Foundational NLP & Sentiment Methods
+
+<details>
+<summary><strong>Show readings</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Key Contribution</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.tidytextmining.com/">Silge &amp; Robinson — <em>Text Mining with R</em> (O'Reilly)</a></td><td>2017</td><td>Canonical tidy text analysis reference; covers sentiment, tf-idf, topic models in R</td></tr>
+<tr><td><a href="https://smltar.com/">Hvitfeldt &amp; Silge — <em>Supervised ML for Text Analysis in R</em></a></td><td>2022</td><td>ML-based text classification, embeddings, and modeling workflows in R</td></tr>
+<tr><td><a href="https://www.jmlr.org/papers/v3/blei03a.html">Blei, Ng &amp; Jordan — <em>JMLR</em></a></td><td>2003</td><td>Original LDA paper; the generative model underlying most topic modeling workflows</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1301.3781">Mikolov et al. — <em>arXiv</em></a></td><td>2013</td><td>Word2Vec; introduced dense word embeddings that underpin modern NLP</td></tr>
+</tbody>
+</table>
+</details>
+
+### Climate & Weather
+
+<details>
+<summary><strong>Show readings</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Key Contribution</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.nature.com/articles/s41558-021-01030-3">Lüdecke et al. — <em>Nature Climate Change</em></a></td><td>2021</td><td>Sentiment analysis of climate change Twitter discourse across countries; identifies negativity bias and polarization</td></tr>
+<tr><td><a href="https://doi.org/10.1088/1748-9326/ab2966">Cody et al. — <em>Environmental Research Letters</em></a></td><td>2015</td><td>Sentiment in climate-related tweets tracks real-world climate events; validates social media as a climate signal</td></tr>
+<tr><td><a href="https://doi.org/10.1016/j.gloenvcha.2020.102060">Tvinnereim et al. — <em>Global Environmental Change</em></a></td><td>2020</td><td>Open-ended survey responses on climate change coded with topic models; reveals public framing diverges from expert framing</td></tr>
+</tbody>
+</table>
+</details>
+
+### Biodiversity & Conservation
+
+<details>
+<summary><strong>Show readings</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Key Contribution</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.researchgate.net/publication/281059725_Text_analysis_tools_for_identification_of_emerging_topics_and_research_gaps_in_conservation_science">Westgate et al. — <em>Conservation Biology</em></a></td><td>2015</td><td>Topic modeling of conservation literature to identify research gaps and emerging themes</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8525079/">Nolan et al. — <em>Methods in Ecology &amp; Evolution</em></a></td><td>2021</td><td>pyResearchInsights: automated topic modeling pipeline for ecology and conservation abstracts</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4240467/">Valle et al. — <em>Ecology Letters</em></a></td><td>2014</td><td>LDA applied to species assemblage data; bridges ecological community analysis and NLP methods</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11959320/">Edelmann et al. — <em>Conservation Biology</em></a></td><td>2025</td><td>Review of LLMs and NLP for evidence synthesis in conservation social science</td></tr>
+</tbody>
+</table>
+</details>
+
+### Pollution & Environmental Health
+
+<details>
+<summary><strong>Show readings</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Key Contribution</th></tr></thead>
+<tbody>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4400579/">Feng et al. — <em>PLOS ONE</em></a></td><td>2015</td><td>LDA on Weibo posts to track public awareness of PM2.5 air quality in China</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0959652621009884">Wang &amp; Jia — <em>Journal of Cleaner Production</em></a></td><td>2021</td><td>Social media discourse on air pollution linked to bottom-up environmental governance pressure</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0301479723020984">Chang et al. — <em>Journal of Environmental Management</em></a></td><td>2023</td><td>Twitter-based civil complaints about urban pollution spatially matched to monitoring data in Taipei</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8156109/">Lin et al. — <em>IJERPH</em></a></td><td>2021</td><td>LDA + PLS-SEM on social media mining to model air pollution adaptation behavior</td></tr>
+</tbody>
+</table>
+</details>
+
+### Corporate ESG & Environmental Reporting
+
+<details>
+<summary><strong>Show readings</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Key Contribution</th></tr></thead>
+<tbody>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5389611/">Székely &amp; vom Brocke — <em>PLOS ONE</em></a></td><td>2017</td><td>LDA on GRI sustainability reports to track longitudinal shifts in corporate environmental framing</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/pii/S0167923624001027">Kriebel &amp; Foege — <em>Decision Support Systems</em></a></td><td>2024</td><td>Benchmarks NLP methods (LDA, BERT, ChatGPT) for sustainability disclosure analysis in 10-K filings</td></tr>
+<tr><td><a href="https://www.mdpi.com/2071-1050/18/3/1486">Gorovaia et al. — <em>Sustainability</em></a></td><td>2025</td><td>LDA + TF-IDF pipeline for greenwashing detection using a Greenwashing Severity Index</td></tr>
+</tbody>
+</table>
+</details>
+
+---
+
+## R Packages for Text Analysis
+
+### Core Text Analysis
+
+| Package | Purpose | Install |
+|---|---|---|
+| [`tidytext`](https://juliasilge.github.io/tidytext/) | Tidy-format text mining: tokenization, tf-idf, sentiment joins, topic model tidying | `install.packages("tidytext")` |
+| [`quanteda`](https://quanteda.io/) | High-performance corpus and document-feature matrix (DFM) construction | `install.packages("quanteda")` |
+| [`quanteda.textstats`](https://quanteda.io/) | Keyness, readability, lexical diversity statistics on DFMs | `install.packages("quanteda.textstats")` |
+| [`quanteda.textplots`](https://quanteda.io/) | Wordclouds, keyness plots, and other quanteda visualizations | `install.packages("quanteda.textplots")` |
+| [`stringr`](https://stringr.tidyverse.org/) | Consistent string manipulation functions (part of `{tidyverse}`) | `install.packages("stringr")` |
+
+### Preprocessing
+
+| Package | Purpose | Install |
+|---|---|---|
+| [`SnowballC`](https://cran.r-project.org/package=SnowballC) | Porter stemmer for 15+ languages | `install.packages("SnowballC")` |
+| [`textstem`](https://cran.r-project.org/package=textstem) | Lemmatization using the Hunspell dictionary | `install.packages("textstem")` |
+
+### Sentiment Analysis
+
+| Package | Purpose | Install |
+|---|---|---|
+| [`sentimentr`](https://github.com/trinker/sentimentr) | Sentence-level sentiment with valence shifters (negation, amplifiers, de-amplifiers) | `install.packages("sentimentr")` |
+| [`tidyvader`](https://github.com/chris31415926535/tidyvader) | Tidy interface to VADER — optimized for social media, handles slang and punctuation | `remotes::install_github("chris31415926535/tidyvader")` |
+| [`vader`](https://cran.r-project.org/package=vader) | Direct VADER implementation; returns compound, positive, negative, and neutral scores | `install.packages("vader")` |
+
+### Topic Modeling
+
+| Package | Purpose | Install |
+|---|---|---|
+| [`topicmodels`](https://cran.r-project.org/package=topicmodels) | LDA and CTM topic models; interfaces with `{tidytext}` via `tidy()` | `install.packages("topicmodels")` |
+| [`ldatuning`](https://cran.r-project.org/package=ldatuning) | Metrics (CaoJuan2009, Deveaud2014, etc.) for selecting the number of topics k | `install.packages("ldatuning")` |
+| [`LDAvis`](https://github.com/cpsievert/LDAvis) | Interactive visualization of topic-word distributions and intertopic distances | `install.packages("LDAvis")` |
+| [`stm`](https://www.structuraltopicmodel.com/) | Structural Topic Model — allows topic prevalence and content to vary with document covariates | `install.packages("stm")` |
+
+### Data Access
+
+| Package | Purpose | Install |
+|---|---|---|
+| [`jsonlite`](https://cran.r-project.org/package=jsonlite) | Parse JSON responses from APIs (NYT, etc.) into R data frames | `install.packages("jsonlite")` |
+| [`LexisNexisTools`](https://cran.r-project.org/package=LexisNexisTools) | Parse Nexis Uni `.docx` exports into tidy data frames | `install.packages("LexisNexisTools")` |
+| [`atrrr`](https://github.com/JBGruber/atrrr) | Bluesky (AT Protocol) API client — search posts, retrieve feeds, authenticate | `install.packages("atrrr")` |
+
+---

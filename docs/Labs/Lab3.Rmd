@@ -1,7 +1,8 @@
 ---
-title: "Lab 4: Lexicon-Based Sentiment Analysis with Bluesky Data"
-output: html_document:
-          theme: cosmo
+title: "Lab 3: Lexicon-Based Sentiment Analysis with Bluesky Data"
+date: "`r Sys.Date()`"
+output: 
+  html_document
 
 ---
 
@@ -42,11 +43,10 @@ In this lab we'll collect posts from Bluesky Social using the `{atrrr}` package 
 ### 2.Packages
 
 ```{r install, eval=FALSE}
-install.packages(c("atrrr", "tidyverse", "tidytext", "sentimentr", "remotes"))
+install.packages(c("atrrr", "tidyverse", "tidytext", "sentimentr", "remotes", "devtools"))
 
 # tidyvader isn't on CRAN:
-#install.packages("devtools")
-devtools::install_github("chris31415926535/tidyvader")
+#remotes::install_github("chris31415926535/tidyvader")
 
 
 ```
@@ -104,6 +104,10 @@ posts <- raw_posts %>%
     post_date  = as.Date(indexed_at),
     text_clean = str_remove_all(text, "https?\\S+"), #remove URLs
     text_clean = str_remove_all(text_clean, "@\\S+"),#remove mentions
+    text_clean = str_replace_all(text_clean,"\u2019", "'"),
+    text_clean = str_remove_all(text_clean, "'s\\b"),
+    text_clean = str_squish(text_clean)
+    
   ) %>%
   filter(nchar(text_clean) > 10)
 ```
@@ -111,6 +115,7 @@ posts <- raw_posts %>%
 How many posts do we have?
 
 ```{r count}
+nrow(posts)
 ```
 
 ---
@@ -123,7 +128,9 @@ Before running any sentiment analysis, look at what words are actually in the da
 # pass 1: standard stop words
 data("stop_words")
 
-tokens_clean <- 
+tokens_clean <- posts %>%
+  unnest_tokens(word, text_clean) %>%
+  anti_join(stop_words, by = "word")
 
 # pass 2: custom stop words and additional cleaning
 custom_sw <- tibble(word = c(
@@ -137,9 +144,18 @@ tokens_clean2 <- tokens_clean %>%
 
 # word frequency plot
 
-word_counts <-
+word_counts <-tokens_clean2 %>%
+  count(word, sort =TRUE)
 
 word_counts %>%
+  slice_max(n, n=20) %>%
+  ggplot(aes(x=reorder(word, n), y=n)) +
+           geom_col() +
+           coord_flip() +
+            labs(title = "Top 20 words in Blue Sky climate change posts",
+                 x =NULL, y = "Count")
+  coord_flip()
+         
 ```
 
 
@@ -152,11 +168,20 @@ word_counts %>%
 Use `get_sentiments("bing")` to load the lexicon, then tokenize with `unnest_tokens()`, join to the lexicon with `inner_join()`, and compute a net score (positive word count minus negative word count) per post. Join the scores back onto `posts` with `left_join()`.
 
 ```{r bing}
+bing <- get_sentiments("bing")
+
 #score posts with Bing
-bing_scores <- posts %>%
+bing_scores <- posts %>% 
+  unnest_tokens(word, text_clean) %>%
+  inner_join(bing, by = "word") %>%
+  count(uri, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  mutate( bing_score = positive - negative)
 
 #join scores to posts  
-posts <- posts %>%
+posts <- posts %>% 
+  left_join(bing_scores, "uri") %>%
+  mutate(bing_score = replace_na(bing_score, 0 ))
 
 ```
 

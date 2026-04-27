@@ -1,0 +1,199 @@
+---
+title: "Week 5: Topic Modeling Lab Preparation"
+subtitle: "EDS 231 — Spring 2026"
+date: "April 21, 2026"
+output:
+  html_document:
+    theme: bootstrap
+    highlight: pygments
+    css: week-styles.css
+    toc: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> Selection of articles to serve as data for next week's topic modeling lab.
+
+---
+
+### Learning Objectives
+
+By the end of NEXT week, you will be able to:
+
+- Explain the generative assumptions behind Latent Dirichlet Allocation (LDA)
+- Construct a document-feature matrix (DFM) suitable for topic modeling using `{quanteda}`
+- Select a value of k using theory, optimization metrics (`ldatuning`), and interpretability
+- Interpret the beta (word-topic) and theta (topic-document) posterior distributions
+- Visualize topic structure with term plots and `{LDAvis}`
+- Apply topic modeling to a real news corpus and characterize emergent themes
+
+---
+
+### Recommended Reading
+
+📖 [Text Mining with R — Ch. 6: Topic Modeling](https://www.tidytextmining.com/topicmodeling)
+
+📖 [Blei, Ng & Jordan (2003) — Latent Dirichlet Allocation, *JMLR*](https://jmlr.org/papers/v3/blei03a.html)
+
+---
+
+## Lecture Materials
+
+### Slides
+
+🖥 Slide deck from lecture
+
+[View Slides](https://ucsb.box.com/s/qge5x1j6gtwh1gd6j0hywc4vv8gjhb8p)
+
+### Code & Data
+
+💻 R scripts used during class:
+
+[]()
+
+---
+
+## Preparing for Lab 4: Getting Your Data from Nexis Uni
+
+Lab 4 will ask you to run a topic model on a corpus of news articles **you retrieve yourself** from Nexis Uni. Follow the steps below before lab so you arrive with data ready to go.
+
+### Step 1 — Search Nexis Uni
+
+1. Go to the [UCSB Library Nexis Uni portal](https://www.library.ucsb.edu/) and search for **Nexis Uni**.
+2. Run a keyword search on a topic of your choosing.
+3. Filter to **News** sources. You can use any other filters you deem appropriate for your purposes. Aim for around **100** articles** — enough for meaningful topics but not so many that model fitting is slow.
+4. Select download format of**Word (.docx)**. You'll have to select articles in batches for download.
+
+### Step 2 — Organize your files
+
+Place all downloaded `.docx` files in a folder inside your project:
+
+```
+your-project/
+  Nexis/
+    your-topic/
+      export1.docx
+      export2.docx
+```
+
+### Step 3 — Read the data into R
+
+The `{LexisNexisTools}` package parses the Nexis `.docx` exports. Install it if you haven't already:
+
+```r
+install.packages("LexisNexisTools")
+```
+
+Then use the code below to load your files and assemble a tidy data frame. The commented-out block below is the standard workflow — update the `path` argument to match your folder name:
+
+```{r load-nexis, eval=FALSE}
+library(LexisNexisTools)
+library(tidyverse)
+
+pre_files <- list.files(
+  path = here::here("Nexis", "your-topic"),   # update to your folder
+  pattern = "\\.docx$",
+  full.names = TRUE,
+  recursive = TRUE,
+  ignore.case = TRUE
+)
+
+pre_dat <- lnt_read(pre_files)
+
+pre_meta_df       <- pre_dat@meta
+pre_articles_df   <- pre_dat@articles
+pre_paragraphs_df <- pre_dat@paragraphs
+
+df <- tibble(
+  date     = pre_meta_df$Date,
+  headline = pre_meta_df$Headline,
+  id       = pre_meta_df$ID,
+  text     = pre_articles_df$Article,
+  source   = pre_meta_df$Newspaper
+)
+```
+---
+
+## 📂 Assignment not due next week
+
+### Lab 4 — Topic Modeling <span class="badge badge-danger">Graded · 11 pts</span>
+
+**Due: May 12 @ 11:59 pm**
+---
+
+## 📚 Topic Modeling in Environmental Science — Key Citations
+
+Curated readings organized by thematic area. Useful background for contextualizing your Lab 4 corpus and interpreting your results.
+
+<details>
+<summary><strong>Foundational Methods</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.jmlr.org/papers/v3/blei03a.html">Blei, Ng &amp; Jordan — <em>J. Machine Learning Research</em></a></td><td>2003</td><td>LDA Methodology</td><td>LDA, probabilistic topic model, generative model, Bayesian inference</td></tr>
+<tr><td><a href="https://dl.acm.org/doi/10.1007/s11042-018-6894-4">Jelodar et al. — <em>Multimedia Tools &amp; Applications</em></a></td><td>2019</td><td>LDA Survey</td><td>LDA survey, Gibbs sampling, variational inference, model extensions</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9120935/">Egger &amp; Yu — <em>Frontiers in Artificial Intelligence</em></a></td><td>2022</td><td>Social Media Topic Modeling</td><td>LDA, NMF, BERTopic, short-text, model comparison</td></tr>
+</tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>Environmental Science Research Trends</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0959652621025373">Palanichamy &amp; Kargar — <em>Journal of Cleaner Production</em></a></td><td>2021</td><td>ESE Research Trends</td><td>LDA, environmental science, research trends, temporal analysis</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7312947/">Ma, Li &amp; Zhang — <em>IJERPH</em></a></td><td>2020</td><td>Bibliometrics</td><td>highly cited papers, climate change, microplastics, Web of Science</td></tr>
+<tr><td><a href="https://link.springer.com/article/10.1007/s10640-021-00554-0">Bjørner — <em>Environmental &amp; Resource Economics</em></a></td><td>2022</td><td>Environmental Economics</td><td>environmental economics, climate change, energy economics, trend detection</td></tr>
+</tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>Biodiversity Conservation</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.researchgate.net/publication/281059725_Text_analysis_tools_for_identification_of_emerging_topics_and_research_gaps_in_conservation_science">Westgate et al. — <em>Conservation Biology</em></a></td><td>2015</td><td>Conservation Research Gaps</td><td>topic modeling, emerging topics, research gaps, text analysis</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8525079/">Nolan et al. — <em>Methods in Ecology &amp; Evolution</em></a></td><td>2021</td><td>Conservation Biology Trends</td><td>topic modeling, biodiversity hotspots, NLP, abstract analysis</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4240467/">Valle et al. — <em>Ecology Letters</em></a></td><td>2014</td><td>Biodiversity Data Analysis</td><td>LDA, species assemblages, community ecology, forest succession</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11959320/">Edelmann et al. — <em>Conservation Biology</em></a></td><td>2025</td><td>NLP for Evidence Synthesis</td><td>NLP, LLMs, evidence synthesis, conservation social science</td></tr>
+<tr><td><a href="https://conbio.onlinelibrary.wiley.com/doi/10.1111/csp2.12670">IUCN Red List Threat Analysis — <em>Conservation Science &amp; Practice</em></a></td><td>2022</td><td>Threat Identification</td><td>IUCN Red List, extinction threats, habitat destruction, threat prioritization</td></tr>
+</tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>Corporate Environmental Reporting</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5389611/">Székely &amp; vom Brocke — <em>PLOS ONE</em></a></td><td>2017</td><td>Sustainability Reports</td><td>LDA, GRI, sustainability reporting, CSR, longitudinal analysis</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/pii/S105752192400601X">Müllerleile et al. — <em>ScienceDirect</em></a></td><td>2024</td><td>ESG Reporting Trends</td><td>BERTopic, ESG, annual reports, climate risk, Non-Financial Reporting Directive</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9275432/">Park, Choi &amp; Jung — <em>Frontiers in Psychology</em></a></td><td>2022</td><td>ESG Public Discourse</td><td>LDA, Dynamic Topic Model, ESG, Twitter, sentiment analysis</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/pii/S0167923624001027">Kriebel &amp; Foege — <em>Decision Support Systems</em></a></td><td>2024</td><td>NLP Method Comparison</td><td>NLP, BERT, ChatGPT, sustainability disclosure, 10-K filings</td></tr>
+<tr><td><a href="https://www.mdpi.com/2071-1050/18/3/1486">Gorovaia et al. — <em>Sustainability</em></a></td><td>2025</td><td>Greenwashing Detection</td><td>greenwashing, LDA, TF-IDF, ESG disclosure, corporate transparency</td></tr>
+</tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>Pollution Monitoring from Social Media</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4400579/">Feng et al. — <em>PLOS ONE</em></a></td><td>2015</td><td>Air Quality / Weibo</td><td>LDA, Weibo, PM2.5, air quality, social media sensing</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0959652621009884">Wang &amp; Jia — <em>Journal of Cleaner Production</em></a></td><td>2021</td><td>Social Media → Policy</td><td>Weibo, PM2.5, environmental governance, bottom-up pressure</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/pii/S1574954124001924">Yao et al. — <em>Ecological Informatics</em></a></td><td>2024</td><td>Contaminated Sites</td><td>topic modeling, public perception, risk management, remediation</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8156109/">Lin et al. — <em>IJERPH</em></a></td><td>2021</td><td>Air Pollution Adaptation</td><td>LDA, air pollution, social media mining, adaptation behavior</td></tr>
+<tr><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0301479723020984">Chang et al. — <em>Journal of Environmental Management</em></a></td><td>2023</td><td>Urban Pollution Complaints</td><td>Twitter, civil complaints, urban pollution, spatial overlap</td></tr>
+</tbody>
+</table>
+</details>
+
+---
