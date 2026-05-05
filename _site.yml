@@ -19,6 +19,8 @@ navbar:
           href: week-4.html
         - text: "Week 5: Topic Modeling Prep"
           href: week-5.html
+        - text: "Week 6: LDA Topic Modeling"
+          href: week-6.html
     #     # - text: "Topic 5: Basic formatting"
     #     #   href: topic_5.html
     #     # - text: "Topic 6: Internal & external links"
