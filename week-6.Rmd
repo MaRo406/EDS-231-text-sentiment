@@ -26,7 +26,6 @@ knitr::opts_chunk$set(echo = TRUE)
 By the end of this week, you will be able to:
 
 - Explain the generative assumptions behind Latent Dirichlet Allocation (LDA)
-- Construct a document-feature matrix (DFM) suitable for topic modeling using `{quanteda}`
 - Select a value of *k* using theory, optimization metrics (`ldatuning`), and interpretability
 - Interpret the beta (word-topic) and theta (topic-document) posterior distributions
 - Visualize topic structure with term plots and `{LDAvis}`
@@ -46,7 +45,7 @@ By the end of this week, you will be able to:
 
 ### Slides
 
-🖥 Slide deck from lecture
+🖥 Slide deck from last week's lecture
 
 [View Slides](#){.btn .btn-primary}
 
@@ -66,7 +65,7 @@ By the end of this week, you will be able to:
 
 In this lab you will fit an LDA topic model to the Nexis Uni news corpus you assembled in Week 5. You will tune the number of topics *k*, inspect the resulting word-topic and topic-document distributions, and write a short interpretation of the themes your model discovers.
 
-[Download Lab 4](Labs/Lab4.html){.btn .btn-primary}
+[Download Lab 4](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab4.Rmd){.btn .btn-primary}
 
 ---
 
@@ -75,18 +74,6 @@ In this lab you will fit an LDA topic model to the Nexis Uni news corpus you ass
 Follow the Nexis Uni data retrieval instructions on the [Week 5 page](week-5.html) to download and load your corpus before lab.
 
 > **Note on corpus size:** The Week 5 instructions recommend downloading around 100 articles as a starting point. For topic modeling, however, **more data generally produces cleaner, more stable topics**. If your initial results feel noisy or topics are hard to interpret, consider going back to Nexis Uni and downloading additional articles — ideally **500 or more** — to give LDA enough signal to work with.
-
----
-
-## 📚 Additional Resources
-
-| Type | Resource |
-|------|----------|
-| Book chapter | [Text Mining with R — Ch. 6: Topic Modeling](https://www.tidytextmining.com/topicmodeling) |
-| Paper | [Blei, Ng & Jordan (2003) — LDA, *JMLR*](https://jmlr.org/papers/v3/blei03a.html) |
-| Package | [`{topicmodels}` CRAN documentation](https://cran.r-project.org/package=topicmodels) |
-| Package | [`{ldatuning}` — selecting number of topics](https://cran.r-project.org/package=ldatuning) |
-| Tool | [`{LDAvis}` — interactive topic visualization](https://github.com/cpsievert/LDAvis) |
 
 ---
 
