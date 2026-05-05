@@ -47,13 +47,13 @@ By the end of this week, you will be able to:
 
 🖥 Slide deck from last week's lecture
 
-[View Slides](#){.btn .btn-primary}
+[View Slides](#https://ucsb.box.com/s/qge5x1j6gtwh1gd6j0hywc4vv8gjhb8p){.btn .btn-primary}
 
 ### Code & Data
 
 💻 R scripts used during class:
 
-[]()
+[Lab4](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab4.Rmd)
 
 ---
 
@@ -73,7 +73,7 @@ In this lab you will fit an LDA topic model to the Nexis Uni news corpus you ass
 
 Follow the Nexis Uni data retrieval instructions on the [Week 5 page](week-5.html) to download and load your corpus before lab.
 
-> **Note on corpus size:** The Week 5 instructions recommend downloading around 100 articles as a starting point. For topic modeling, however, **more data generally produces cleaner, more stable topics**. If your initial results feel noisy or topics are hard to interpret, consider going back to Nexis Uni and downloading additional articles — ideally **500 or more** — to give LDA enough signal to work with.
+> **Note on corpus size:** The Week 5 instructions recommend downloading around 100 articles as a starting point. For topic modeling, however, **more data generally produces cleaner, more stable topics**. If your initial results feel noisy or topics are hard to interpret, consider going back to Nexis Uni and downloading additional articles — bump it up to **500 or so** — to give LDA enough signal to work with.
 
 ---
 
