@@ -1,0 +1,352 @@
+---
+title: 'Lab 4: Topic Analysis'
+author: "Mateo Robbins"
+date: 
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Background: Latent Dirichlet Allocation
+
+Latent Dirichlet Allocation (LDA) is a generative probabilistic model that treats each document as a mixture of topics, and each topic as a mixture of words. Understanding the key variables helps interpret model outputs:
+
+| Symbol | Name | Role |
+|--------|------|------|
+| **α** (alpha) | Hyperparameter | Dirichlet prior on document-topic distributions. Small α → each document focuses on few topics. Set by researcher. |
+| **β** (beta) | Hyperparameter | Dirichlet prior on topic-word distributions. Small β → each topic uses a focused vocabulary. Set by researcher. |
+| **θ** (theta) | Document-topic distribution | Probability distribution over topics for each document. *P(topic \| document)*. Latent — must be inferred. |
+| **φ** (phi) | Topic-word distribution | Probability distribution over vocabulary for each topic. *P(word \| topic)*. Called `beta` in tidytext. Latent — must be inferred. |
+| **z** | Topic assignment | The hidden topic label allocated to each individual word token. The bridge between θ and φ. Latent — must be inferred. |
+| **w** | Observed word | The only variable you actually see. Everything else is inferred from patterns in w. |
+
+### The Generative Assumptions
+
+LDA imagines that documents were written as follows:
+
+1. For each topic *t*, draw a word distribution **φ_t** ~ Dirichlet(β)
+2. For each document *m*, draw a topic distribution **θ_m** ~ Dirichlet(α)  
+3. For each word position in that document:
+   - Draw a topic assignment **z** ~ Multinomial(θ_m)
+   - Draw the word **w** ~ Multinomial(φ_z)
+
+Inference runs this process in reverse: given the observed words **w**, recover the most probable **z**, **θ**, and **φ**.
+
+### The Dirichlet Distribution
+
+The Dirichlet distribution is a *distribution over distributions* — it produces probability vectors that sum to 1, making it ideal for representing topic mixtures and word mixtures. The concentration parameter (α or β) controls sparsity:
+
+- **Small value (< 1)**: samples are sparse — most probability sits on one or two categories. Realistic for most text corpora.
+- **Large value (> 1)**: samples are spread evenly across all categories.
+- **Value = 1**: uniform — all mixtures equally likely.
+
+---
+
+## Lab Setup
+
+```{r packages}
+library(quanteda)      # corpus, tokenization, and DFM construction
+library(tm)            # legacy text-mining utilities; needed by some topicmodels internals
+library(topicmodels)   # LDA() — the core topic model fitting function
+library(topicdoc)      # topic_coherence() — statistical model evaluation
+library(tidyverse)     # data wrangling and ggplot2 visualization
+library(tidytext)      # tidy() method for LDA objects; reorder_within() for faceted plots
+library(reshape2)      # melt() — reshapes wide matrices to long format for ggplot
+library(tictoc)        # tic() / toc() — lightweight benchmarking: measures wall-clock time
+library(LDAvis)        # createJSON() + serVis() — interactive topic visualization
+library(tsne)          # t-SNE dimensionality reduction used inside the LDAvis layout
+library(servr)         # serves the LDAvis HTML in your browser via a local web server
+```
+
+## Load the Data
+
+```{r data}
+tbl <- read_csv("https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/refs/heads/main/data/nexis-dat.csv")
+```
+
+## Build the Corpus
+
+We use `corpus()` from {quanteda} to build the corpus from our data frame.
+
+```{r corpus}
+corpus <- corpus(x = tbl, text_field = "text")
+```
+
+## Tokenize and Clean
+
+`tokens()` handles punctuation and number removal. We also build a custom stopword list that removes common journalistic filler words that carry no thematic signal.
+
+```{r tokens}
+add_stops <- c(quanteda::stopwords("en", source = "smart"),
+               "said", "says", "told", "according")
+
+toks <- tokens(corpus, remove_punct = TRUE, remove_numbers = TRUE) |>
+  tokens_tolower()
+
+toks1 <- tokens_select(toks, pattern = add_stops, selection = "remove")
+```
+
+## Build the Document-Feature Matrix
+
+Topic modeling requires a document-feature matrix (DFM). We trim rare terms (appearing in fewer than 2 documents) and remove empty rows — LDA cannot process documents with no terms.
+
+```{r dfm}
+# dfm() converts the token list into a Document-Feature Matrix for LDA
+dfm1 <- dfm(toks1)
+
+dfm2 <- dfm_trim(dfm1, min_docfreq = 2)
+
+# slam::row_sums() computes row totals on the sparse Matrix class used by quanteda.
+sel_idx <- slam::row_sums(dfm2) > 0
+dfm <- dfm2[sel_idx, ]
+```
+
+---
+
+## Step 1: Initial Model (Theory-Driven k)
+
+Great, now we are almost ready to run a model. We just have to come up with an initial value for k, the number of latent topics present in the data. How do we do this? Let's say I think there may be political, economic and environmental articles. So I will tell the model to look for 3 topics by setting the k parameter = 3.
+
+
+```{r LDA_k3}
+k <- 6
+
+topicModel_k6 <- LDA(dfm,
+                     k,
+                     method = "Gibbs", #iterative resampling of topic labels for each token
+                     control = list(iter = 1000,
+                                    verbose = 25,
+                                    seed = 321))  # set seed for reproducibility
+```
+
+### Inspect the Posterior Distributions
+
+`posterior()` extracts the two key output matrices:
+
+- **theta (θ)**: document × topic matrix — *P(topic | document)*
+- **beta/phi (φ)**: topic × term matrix — *P(term | topic)*
+
+```{r inspect_k3}
+result <- posterior(topicModel_k6)
+
+beta  <- result$terms   # φ: topic-word distributions (rows = topics, cols = vocab)
+theta <- result$topics  # θ: document-topic distributions (rows = docs, cols = topics)
+
+cat("phi dimensions  (topics × vocab):", dim(beta), "\n")
+cat("theta dimensions (docs × topics):", dim(theta), "\n")
+
+# Top 10 terms per topic
+terms(topicModel_k6, 10)
+```
+
+---
+
+## Step 2: Selecting k with Coherence Scores
+
+An alternative to theory-driven k selection is to fit models across a range of k values and evaluate them statistically. We use `topicdoc::topic_coherence()`, which measures whether the top words of each topic co-occur frequently in the corpus — a proxy for human interpretability.  We can do this efficiently by running a sequence of models, each with a different value of k.
+
+**Higher coherence = more semantically meaningful topics.**
+
+
+```{r find_k}
+tic()
+
+# Fit models for a range of k values
+k_values <- seq(2, 15, by = 1) 
+
+coherence_results <- map_dfr(k_values, function(k) { 
+  m <- LDA(dfm, k = k, method = "Gibbs",
+           control = list(iter = 300, seed = 321, verbose = 0))
+  coh <- mean(topic_coherence(m, dfm))
+  tibble(k = k, coherence = coh)
+})
+
+toc() #~185s 
+
+# Plot coherence vs k — look for the peak or elbow
+ggplot(coherence_results, aes(x = k, y = coherence)) +
+  geom_line(color = "steelblue") +
+  geom_point(color = "steelblue", size = 2) +
+  geom_vline(xintercept = coherence_results$k[which.max(coherence_results$coherence)],
+             linetype = "dashed", color = "coral") +
+  labs(title = "Mean topic coherence by number of topics (k)",
+       subtitle = "Dashed line = k with highest coherence",
+       x = "Number of topics (k)",
+       y = "Mean coherence score") +
+  theme_minimal()
+```
+
+> **Interpreting the plot:** Look for the peak coherence value, or an "elbow" 
+> where adding more topics stops improving coherence meaningfully. 
+> Also inspect the top terms at two or three candidate k values — 
+> statistical criteria and human interpretability do not always agree.
+> Your final choice of k should be justified on both grounds.
+
+---
+
+## Step 3: Fit the Selected Model
+
+Based on the coherence plot (and domain knowledge of the corpus), we select a final k value and fit the final model. 
+
+```{r LDA_final}
+k <- 6   # update this based on your coherence plot
+
+topicModel_k_select <- LDA(dfm, k,
+                           method = "Gibbs",
+                           control = list(iter = 1000,
+                                          verbose = 25,
+                                          seed = 321))
+
+tmResult <- posterior(topicModel_k_select)
+terms(topicModel_k_select, 10)
+
+theta <- tmResult$topics   # θ: P(topic | document)
+beta  <- tmResult$terms    # φ: P(term | topic)
+vocab <- colnames(beta)
+```
+
+---
+
+## Step 4: Visualize Top Terms per Topic
+
+The β (φ) matrix gives us *P(term | topic)*. Plotting the highest-probability terms for each topic is the primary tool for human interpretation of what each topic "means."
+
+```{r top_terms_plot}
+topics <- tidy(topicModel_k_select, matrix = "beta")
+
+top_terms <- topics |>
+  group_by(topic) |>
+  slice_max(beta, n = 10) |>
+  ungroup() |>
+  arrange(topic, -beta)
+
+top_terms |>
+  mutate(term = reorder_within(term, beta, topic, sep = "")) |>
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free_y") +
+  scale_x_reordered() +
+  coord_flip() +
+  labs(title = "Top 10 terms per topic",
+       subtitle = "β = P(term | topic)",
+       x = NULL, y = "β") +
+  theme_minimal()
+```
+
+---
+
+## Step 5: Name the Topics
+
+Interpret each topic by examining its top terms and assigning a descriptive label. This is an inherently qualitative step — topic names should reflect genuine thematic content, not just the top terms mechanically concatenated.
+
+```{r topic_names}
+topic_words <- terms(topicModel_k_select, 5)
+
+# Option 1: auto-name from top 5 terms (quick but shallow)
+topic_names <- apply(topic_words, 2, paste, collapse = " ")
+
+# Option 2: replace with your own interpretive labels after inspection (recommended)
+# topic_names <- c("Industrial pollution", "Conservation policy",
+#                  "Corporate reporting",  "Climate adaptation")
+
+topic_names
+```
+
+---
+
+## Step 6: Document-Topic Distributions (θ)
+
+The θ matrix shows how each document blends across topics. This reflects the allocation of word tokens **z** to topics within each document — a document with many words assigned to topic 2 will have high θ for topic 2.
+
+```{r topic_dists}
+example_ids <- c(1:5)
+n <- length(example_ids)
+
+example_props <- theta[example_ids, ]
+colnames(example_props) <- topic_names
+
+viz_df <- melt(cbind(data.frame(example_props),
+                     document = factor(1:n)),
+               variable.name = "topic",
+               id.vars = "document")
+
+ggplot(data = viz_df, aes(topic, value, fill = document)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  coord_flip() +
+  facet_wrap(~ document, ncol = n) +
+  labs(title = "Topic distributions across sample documents",
+       subtitle = "θ = P(topic | document)",
+       x = NULL, y = "Topic proportion")
+```
+
+---
+
+## Step 7: Interactive Visualization with LDAvis
+
+LDAvis provides an interactive view of two complementary aspects of the model:
+
+- **Intertopic distance map**: circles represent topics; size = proportion of corpus tokens assigned to that topic; distance = degree of topic overlap in vocabulary
+- **Term relevance bar chart**: adjustable by the λ (lambda) parameter
+
+### The λ (lambda) Relevance Parameter
+
+λ controls the trade-off between term frequency and term exclusivity when ranking words within a topic:
+
+$$\text{Relevance}(w, t) = \lambda \times P(w|t) + (1 - \lambda) \times \frac{P(w|t)}{P(w)}$$
+
+- **λ near 1**: ranks terms by raw frequency within the topic — highlights common words
+- **λ near 0**: ranks terms by how *exclusive* they are to the topic relative to the whole corpus — highlights distinctive words, analogous to tf-idf
+- **λ ≈ 0.6**: the empirically recommended default (Sievert & Shirley, 2014) that balances both
+
+```{r LDAvis}
+svd_tsne <- function(x) tsne(svd(x)$u)
+
+json <- createJSON(
+  phi           = tmResult$terms,
+  theta         = tmResult$topics,
+  doc.length    = rowSums(dfm),
+  vocab         = colnames(dfm),
+  term.frequency = colSums(dfm),
+  mds.method    = svd_tsne,
+  plot.opts     = list(xlab = "", ylab = "")
+)
+
+serVis(json)
+```
+
+---
+
+## Assignment: Lab 4
+
+For this assignment you will apply the full LDA pipeline to the Nexis Uni article data you downloaded in Week 2.
+
+**1. Build and clean your corpus**  
+Create a corpus from your articles. Clean appropriately for your data — consider what stopwords, minimum document frequencies, and tokenization choices make sense given your specific corpus.
+
+**2. Select k using multiple criteria**  
+
+Run three models (i.e. with 3 values of k) and select the overall best value for k (the number of topics) - include some justification for your selection: theory, FindTopicsNumber() optimization metrics, interpretability, LDAvis. Select the best single value of k.
+
+Run models across a range of k values and produce a coherence plot using `topicdoc`. Also consider:
+- **Theory**: what themes do you expect given your article topic?
+- **Interpretability**: read the top 10 terms at 2–3 candidate k values — do they form coherent, distinct themes?
+- **LDAvis**: do the topic circles separate well, or do they overlap heavily?
+
+Select a single best k and write 2–3 sentences justifying your choice drawing on the three criteria.
+
+**3. Fit your final model and visualize top terms**  
+Plot the top 10 terms per topic.
+
+**4. Visualize document-topic distributions**  
+Plot θ for a sample of documents (5–10). Choose a sample size that produces a readable plot.
+
+**5. Interpret your topics**  
+Assign a descriptive name to each topic (not just the concatenated top terms). In a short paragraph per topic, describe:
+- What theme or issue does this topic represent?
+- Which words are most diagnostic of this interpretation?
+- Are there any surprising or ambiguous words in the top terms?
+

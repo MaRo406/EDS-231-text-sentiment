@@ -121,7 +121,7 @@ df <- tibble(
 
 ## 📂 Assignment not due next week
 
-### Lab 4 — Topic Modeling <span class="badge badge-danger">Graded · 11 pts</span>
+### Lab 4 — Topic Modeling with Nexis Uni Data <span class="badge badge-danger">Graded · 11 pts</span>
 
 **Due: May 12 @ 11:59 pm**
 ---
