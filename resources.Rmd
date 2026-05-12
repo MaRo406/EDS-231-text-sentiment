@@ -27,6 +27,7 @@ knitr::opts_chunk$set(echo = FALSE)
 | [New York Times API](https://developer.nytimes.com/) | Full-text article search across the NYT archive. Returns metadata, snippets, and article URLs via JSON. Free with registration; rate-limited. | API key via NYT Developer Portal | Lab 1 |
 | [Nexis Uni](https://www.library.ucsb.edu/) | Licensed news and publication database with full-text exports in `.docx` format. Covers thousands of outlets globally. | UCSB Library login | Labs 2 & 4 |
 | [Bluesky / AT Protocol](https://bsky.app) | Decentralized social media platform. The `{atrrr}` package provides a tidy R interface for searching posts by keyword, hashtag, or user. | Free account + app password | Lab 3 |
+| [Climate Security Dialogues on Twitter — CGIAR](https://cgspace.cgiar.org/server/api/core/bitstreams/798b0229-7c5f-4428-9d72-efe128fad650/content) | Annotated Twitter dataset covering climate security discourse. Useful for sentiment analysis, classification, and topic modeling in a climate-conflict context. | Open access via CGIAR CGSpace | — |
 
 ---
 
@@ -59,6 +60,23 @@ Studies applying text and sentiment analysis to environmental research questions
 <tr><td><a href="https://www.nature.com/articles/s41558-021-01030-3">Lüdecke et al. — <em>Nature Climate Change</em></a></td><td>2021</td><td>Sentiment analysis of climate change Twitter discourse across countries; identifies negativity bias and polarization</td></tr>
 <tr><td><a href="https://doi.org/10.1088/1748-9326/ab2966">Cody et al. — <em>Environmental Research Letters</em></a></td><td>2015</td><td>Sentiment in climate-related tweets tracks real-world climate events; validates social media as a climate signal</td></tr>
 <tr><td><a href="https://doi.org/10.1016/j.gloenvcha.2020.102060">Tvinnereim et al. — <em>Global Environmental Change</em></a></td><td>2020</td><td>Open-ended survey responses on climate change coded with topic models; reveals public framing diverges from expert framing</td></tr>
+</tbody>
+</table>
+</details>
+
+### Sentiment Analysis in Environmental Science
+
+<details>
+<summary><strong>Show readings</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Key Contribution</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.nature.com/articles/s43247-024-01974-8">Alvarez-Lacalle et al. — <em>Communications Earth &amp; Environment</em></a></td><td>2024</td><td>Sixteen years of Reddit climate change discourse analyzed for shifts in language and sentiment; identifies growing negativity and polarization over time using longitudinal NLP</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2504.18837">Shaeri et al. — <em>arXiv</em></a></td><td>2025</td><td>Survey of sentiment analysis methods applied to social media during climate disasters and extreme weather events; taxonomizes approaches from lexicon-based tools through LLMs and identifies open challenges</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2312.03095">Amangeldi et al. — <em>arXiv</em></a></td><td>2023</td><td>Applies PMI-based sentiment and NRC emotion analysis to a decade of climate and environmental posts across Twitter, Reddit, and YouTube; finds negative sentiment dominates, with fear and anticipation as leading emotions</td></tr>
+<tr><td><a href="https://journals.ametsoc.org/view/journals/wcas/15/2/WCAS-D-22-0123.1.xml">Feldman et al. — <em>Weather, Climate, and Society</em></a></td><td>2023</td><td>Applies lexicon-based emotion and sentiment analysis to a large Twitter corpus on climate change; identifies how emotional valence varies by topic framing, user type, and seasonal climate events</td></tr>
+<tr><td><a href="https://link.springer.com/chapter/10.1007/978-3-031-82896-6_7">Anonymous — <em>Springer</em></a></td><td>2025</td><td>Systematic literature review of NLP and ML methods applied to climate change discourse on social media; maps the state of the field across sentiment analysis, topic modeling, and classification approaches</td></tr>
+<tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11723603/">van der Veen &amp; Bleich — <em>PLOS ONE</em></a></td><td>2025</td><td>Introduces MultiLexScaled and demonstrates that lexicon-based sentiment methods remain competitive with ML and LLM approaches for media and text corpora; directly relevant to lexicon vs. ML tradeoffs discussed in this course</td></tr>
 </tbody>
 </table>
 </details>
@@ -103,6 +121,24 @@ Studies applying text and sentiment analysis to environmental research questions
 <tr><td><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5389611/">Székely &amp; vom Brocke — <em>PLOS ONE</em></a></td><td>2017</td><td>LDA on GRI sustainability reports to track longitudinal shifts in corporate environmental framing</td></tr>
 <tr><td><a href="https://www.sciencedirect.com/science/article/pii/S0167923624001027">Kriebel &amp; Foege — <em>Decision Support Systems</em></a></td><td>2024</td><td>Benchmarks NLP methods (LDA, BERT, ChatGPT) for sustainability disclosure analysis in 10-K filings</td></tr>
 <tr><td><a href="https://www.mdpi.com/2071-1050/18/3/1486">Gorovaia et al. — <em>Sustainability</em></a></td><td>2025</td><td>LDA + TF-IDF pipeline for greenwashing detection using a Greenwashing Severity Index</td></tr>
+</tbody>
+</table>
+</details>
+
+### Text Classification in Environmental Science
+
+<details>
+<summary><strong>Show readings</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Binary Task</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.nature.com/articles/s41558-021-01143-3">Coan et al. — <em>Nature Climate Change</em></a></td><td>2021</td><td>Classifies climate contrarian claims vs. legitimate climate discourse; applies ML to large-scale denial detection</td></tr>
+<tr><td><a href="https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13608">Kulkarni et al. — <em>Methods in Ecology &amp; Evolution</em></a></td><td>2021</td><td>Classifies news articles as relevant vs. irrelevant to CITES-listed threatened species; shows ML outperforms keyword search</td></tr>
+<tr><td><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10540966/">Shyrokykh et al. — <em>PLOS ONE</em></a></td><td>2023</td><td>Compares ML classifiers for short text; identifies climate-relevant tweets with Naive Bayes, SVM, and BERT</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2110.12010">Webersinke et al. — <em>arXiv</em></a></td><td>2021</td><td>ClimateBERT: domain-adapted language model for detecting climate-relevant text; strong baseline for downstream classification</td></tr>
+<tr><td><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173132">Patel et al. — <em>PLOS ONE</em></a></td><td>2017</td><td>Text mining to classify PubMed abstracts as relevant vs. irrelevant for chemical exposure assessment; demonstrates systematic review automation</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2404.05133">Grasso et al. — <em>arXiv</em></a></td><td>2024</td><td>EcoVerse: annotated Twitter dataset for eco-relevance binary classification; benchmark for environmental social media filtering</td></tr>
+<tr><td><a href="https://www.cambridge.org/core/journals/environmental-data-science/article/language-models-for-the-analysis-of-and-interaction-with-climate-change-documents/880998E58190D3605B1D0869D9AF2D23">Anonymous — <em>Environmental Data Science</em></a></td><td>2025</td><td>Reviews language models for climate change document analysis including binary classification of policy commitment paragraphs</td></tr>
 </tbody>
 </table>
 </details>

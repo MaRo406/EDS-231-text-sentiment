@@ -68,9 +68,9 @@ The goal of EDS 231 (Text and Sentiment Analysis for Environmental Problems) is 
 | 2    | **Text Preprocessing and Cleaning**             |
 | 3    | **Exploratory Text Analysis and Visualization** |
 | 4    | **Lexicon-Based Sentiment Analysis**            |
-| 5    | **Text Representation I**                       |
-| 6    | **Text Representation II**                      |
-| 7    | **Sentiment Analysis II**                       |
-| 8    | **Classification**                              |
-| 9    | **TBD**                                         |
-| 10   | **Group presentations**                         |
+| 5    | **Topic Modeling I**                            |
+| 6    | **Topic Modeling II**                           |
+| 7    | **Classification**                              |
+| 8    | **Text Representation**                         |
+| 9    | **Final project work day**                      | 
+| 10   | **Final project presentations**                 |

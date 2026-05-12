@@ -1,0 +1,116 @@
+---
+title: "Week 7: Text Classification"
+subtitle: "EDS 231 — Spring 2026"
+date: "May 5, 2026"
+output:
+  html_document:
+    theme: bootstrap
+    highlight: pygments
+    css: week-styles.css
+    toc: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> Using supervised machine learning to classify text documents — predicting outcomes from language with Naive Bayes and regularized regression.
+
+---
+
+### Learning Objectives
+
+By the end of this week, you will be able to:
+
+- Explain the generative assumptions behind Naive Bayes classification
+- Build a text classification pipeline using `{tidymodels}` and `{textrecipes}`
+- Apply tf-idf feature engineering as a preprocessing step for classification
+- Evaluate model performance using accuracy, ROC AUC, and confusion matrices
+- Tune a Lasso regularization penalty and interpret the resulting word-importance coefficients
+
+---
+
+### Recommended Reading
+
+📖 [Text Mining with R — Ch. 7: Case Study — Comparing Twitter Archives](https://www.tidytextmining.com/twitter)
+
+📖 [Hvitfeldt & Silge — Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
+
+---
+
+---
+
+## Lecture Materials
+
+### Slides
+
+🖥 Slide deck from this week's lecture
+
+[View Slides](#https://ucsb.box.com/s/xjc9a7fhvos9h0gncaboz1arofhvz6vn){.btn .btn-primary}
+
+### Code & Data
+
+💻 R scripts used during class:
+
+[Lab5](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab5.Rmd)
+
+---
+
+## 📂 Assignment
+
+### Lab 5 — Text Classification <span class="badge badge-danger">Graded · 11 pts</span>
+
+**Due: May 19 @ 11:59 pm**
+
+In this lab you will build a supervised text classifier to predict whether a climbing incident report describes a fatal or non-fatal accident. You will fit a Naive Bayes baseline, then compare its performance to other models on held-out test data.
+
+[Download Lab 5](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab5.Rmd){.btn .btn-primary}
+
+---
+
+---
+
+## 📚 Text Classification in Environmental Science — Key Citations
+
+Curated readings organized by thematic area. Useful background for situating the classification methods from this week in applied environmental research contexts.
+
+<details>
+<summary><strong>Climate Change & Misinformation</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://www.nature.com/articles/s41558-021-01143-3">Coan et al. — <em>Nature Climate Change</em></a></td><td>2021</td><td>Climate Denial Detection</td><td>contrarian claims, binary classification, SVM, misinformation, media framing</td></tr>
+<tr><td><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10540966/">Shyrokykh et al. — <em>PLOS ONE</em></a></td><td>2023</td><td>Climate Tweet Classification</td><td>short text, Naive Bayes, SVM, BERT, Twitter, climate relevance</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2110.12010">Webersinke et al. — <em>arXiv</em></a></td><td>2021</td><td>ClimateBERT</td><td>domain-adapted language model, climate-relevant text detection, transfer learning</td></tr>
+</tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>Biodiversity & Conservation</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13608">Kulkarni et al. — <em>Methods in Ecology &amp; Evolution</em></a></td><td>2021</td><td>Threatened Species News Filtering</td><td>binary classification, CITES, news relevance, random forest, information retrieval</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2404.05133">Grasso et al. — <em>arXiv</em></a></td><td>2024</td><td>EcoVerse Dataset</td><td>eco-relevance, annotated Twitter dataset, binary classification benchmark</td></tr>
+</tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>Environmental Health & Pollution</strong></summary>
+<table>
+<thead><tr><th>Citation</th><th>Year</th><th>Topic</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173132">Patel et al. — <em>PLOS ONE</em></a></td><td>2017</td><td>Exposure Assessment Literature Screening</td><td>text mining, PubMed, binary relevance classification, systematic review automation</td></tr>
+<tr><td><a href="https://bmcpublichealth.biomedcentral.com/articles/10.1186/s12889-017-4914-3">Bellinger et al. — <em>BMC Public Health</em></a></td><td>2017</td><td>Air Pollution Epidemiology Screening</td><td>ML, data mining, systematic review, air pollution, study relevance classification</td></tr>
+</tbody>
+</table>
+</details>
+
+---
+
+[← Week 6: LDA Topic Modeling](week-6.html)
