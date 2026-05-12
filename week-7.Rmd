@@ -49,7 +49,7 @@ By the end of this week, you will be able to:
 
 🖥 Slide deck from this week's lecture
 
-[View Slides](#https://ucsb.box.com/s/xjc9a7fhvos9h0gncaboz1arofhvz6vn){.btn .btn-primary}
+[View Slides](https://ucsb.box.com/s/xjc9a7fhvos9h0gncaboz1arofhvz6vn)
 
 ### Code & Data
 
