@@ -1,0 +1,289 @@
+---
+title: "Lab5-demo"
+output: html_document
+date: "2026-05-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval=FALSE)
+```
+
+```{r packages, include = FALSE}
+library(tidytext)
+library(tidyverse)
+library(tidymodels)
+library(textrecipes)
+library(naivebayes)
+library(discrim) 
+library(glmnet)
+```
+
+This full data set includes more possible predictors than the text alone, but for this model we will only use the text variable
+
+```{r data}
+
+urlfile ="https://raw.githubusercontent.com/MaRo406/EDS-231-text-sentiment/main/data/climbing_reports_model_dat.csv"
+incidents_df<-readr::read_csv(url(urlfile))
+```
+
+```{r examine-data}
+glimpse(incidents_df)
+
+# How many incidents are marked as deadly?
+
+incidents_df |>
+  count(Deadly, name = "n")
+
+```
+
+Now we'll split our data into training and test portions
+
+```{r split-data}
+set.seed(321)
+incidents2class <- incidents_df |> 
+  mutate(deadly = factor(if_else(
+    is.na(Deadly),
+    "non-deadly", "deadly"
+  )))
+
+#split our data
+incidents_split <- initial_split(incidents2class, prop = 0.8, strata = deadly)
+
+incidents_train <- training(incidents_split)
+incidents_test <- testing(incidents_split)
+
+```
+
+We use recipe() to specify the predictor and outcome variables and the data.
+
+```{r recipe}
+incidents_rec <- recipe(deadly ~ Text, data = incidents_train)
+```
+
+Next we add some familiar pre-processing steps on our Text variable: tokenize to word level, filter to the most common words, and calculate tf-idf.
+
+```{r pre-process}
+recipe <- incidents_rec |> 
+  step_tokenize(Text) |> 
+  step_tokenfilter(Text, max_tokens = 1000) |> 
+  step_tfidf(Text)
+
+recipe
+```
+
+> **Python parallel:** This three-step recipe maps almost directly onto a single sklearn object: `TfidfVectorizer(max_features=1000)`.
+
+```{r nb-spec}
+nb_spec <- naive_Bayes() %>%
+  set_mode("classification") %>% #set modeling context
+  set_engine("naivebayes") #method for fitting model
+
+```
+
+Time for model evaluation. We'll do a standard resampling process to evaluate our naive Bayes model. Here we create 10-fold cross-validation sets, and use them to estimate performance. `vfold_cv` let's us do this.
+
+```{r}
+set.seed(123)
+incidents_folds <- vfold_cv(incidents_train)
+
+incidents_folds
+
+```
+Create a tidymodels workflow to combine the modeling components
+
+> **Python parallel:** A `workflow()` is the tidymodels equivalent of `sklearn.pipeline.Pipeline`. Both bundle preprocessing and a model estimator into a single object that can be fit, cross-validated, and used for prediction in one call.
+
+```{r nb-workflow}
+nb_wf <- workflow() |> 
+  add_recipe(recipe) |> 
+  add_model(nb_spec)
+```
+
+To estimate its performance, we fit the model to each of the resampled folds, and then evaluate on the heldout part of each resampled fold.
+
+```{r fit-resamples}
+
+nb_rs <- tune::fit_resamples(
+  nb_wf,
+  incidents_folds,
+  control = control_resamples(save_pred=TRUE)
+
+)
+```
+
+> **Python parallel:** `fit_resamples()` is doing what `cross_validate(pipeline, X, y, cv=kfold, scoring=['accuracy','roc_auc'], return_estimator=True)` does in sklearn — fitting the full pipeline (preprocessing + model) on each training fold and scoring on the held-out fold.
+
+Extract the relevant information using collect_metrics() and collect_predictions() and examine the performance metrics.
+
+```{r performance}
+nb_rs_metrics <- collect_metrics(nb_rs)
+nb_rs_predictions <- collect_predictions(nb_rs)
+nb_rs_metrics
+```
+
+We'll use two performance metrics: accuracy and ROC AUC. Accuracy is the proportion of the data that is predicted correctly. The ROC curve plots the true positive rate against the false positive rate; AUC closer to 1 indicates a better-performing model, while AUC closer to 0.5 indicates a model that does no better than random guessing.
+
+```{r performance-plot}
+nb_rs_predictions %>%
+  group_by(id) %>%
+  roc_curve(truth = deadly, .pred_deadly) %>%
+  autoplot() +
+  labs(
+    color = "Resamples",
+    title = "ROC curve for Climbing Incident Reports"
+  )
+```
+
+Another model method involves the confusion matrix. A confusion matrix tabulates a model's false positives and false negatives for each class.
+
+```{r confusion-matrix}
+conf_mat_resampled(nb_rs, tidy = FALSE) %>% #compute matrix for each fold then average
+  autoplot(type = "heatmap")
+```
+
+Hmm, let's try a different model. 
+
+Lasso classification uses regularization on regression to produce a simpler, more generalizable model. It learns how much of a penalty to apply to features, reducing the high-dimensional space of tokens — sometimes shrinking coefficients all the way to 0, effectively removing those features from the model entirely.
+
+The penalty is a hyperparameter we need to choose. Rather than setting it manually, we estimate its best value by fitting models across 30 candidate penalty values on our resampled data and comparing performance.
+
+```{r penalty-tuning-specification}
+tune_spec <- logistic_reg(penalty = tune(), mixture = 1) %>%
+  set_mode("classification") %>%
+  set_engine("glmnet")
+
+tune_spec
+
+```
+
+```{r lamba}
+tune_spec <- logistic_reg(penalty=tune(), mixture = 1) |> 
+  set_mode("classification") |> 
+  set_engine("glmnet")
+
+tune_spec
+
+```
+
+Here we use grid_regular() to create 30 possible values for the regularization penalty. Then tune_grid() fits a model at each of those values.
+```{r}
+lambda_grid <- grid_regular(penalty(), levels = 30) 
+
+lambda_grid
+```
+
+
+
+> **Python parallel:** `grid_regular(penalty(), levels = 30)` + `tune_grid()` is akin to using `GridSearchCV().
+
+```{r tune}
+lasso_wf <- workflow() %>% 
+  add_recipe(recipe) %>% 
+  add_model(tune_spec)
+
+set.seed(2023)
+tune_rs <- tune_grid(
+  lasso_wf,
+  incidents_folds,
+  grid = lambda_grid,
+  control = control_resamples(save_pred = T)
+  
+)
+
+```
+
+```{r plot_metrics}
+collect_metrics(tune_rs)
+autoplot(tune_rs) + 
+  labs(
+    title = "Lasso performance across regularization penalties"
+  )
+```
+
+```{r penalty-show-best}
+
+tune_rs %>%
+  show_best(metric = "roc_auc")
+
+tune_rs %>%
+  show_best(metric = "accuracy")
+
+chosen_acc <- tune_rs %>% 
+  select_by_one_std_err(metric = "accuracy", -penalty)
+```
+
+Next, let's finalize our workflow with this particular regularization penalty. This is the regularization penalty that our tuning results indicate give us the best model.
+
+```{r final-model}
+final_lasso <- finalize_workflow(lasso_wf, chosen_acc
+                                 )
+
+final_lasso
+
+```
+
+The penalty argument value now reflects our tuning result. Now we fit to our training data.
+
+```{r}
+fitted_lasso <- fit(final_lasso, incidents_train)
+
+fitted_lasso
+```
+
+First let's look at the words associated with an accident being non-deadly.
+
+```{r words-non-deadly}
+fitted_lasso |> 
+  extract_fit_parsnip() |> 
+  tidy() |> 
+  arrange(-estimate)
+
+
+```
+
+And now the words that are most associated with a deadly incident.
+
+```{r words-deadly}
+fitted_lasso|> 
+  extract_fit_parsnip() |> 
+  tidy() |> 
+  arrange(-estimate)
+```
+
+Finally, let's fit to the test data and see how we did.
+
+```{r}
+last_fit(final_lasso, incidents_split) %>%
+  collect_metrics()
+```
+
+------------------------------------------------------------------------
+
+## Lab 5 Assignment: Due May 19 at 11:59pm
+
+### Language & Tools
+
+You may complete this assignment **in R or Python** — your choice. If you work in Python, submit a `.ipynb` or `.py` script along with the knit product instead of the `.Rmd`.
+
+### AI Use
+
+You are permitted to use Claude (or another LLM) **more liberally than in previous labs** for this assignment, including for help writing or debugging code you haven't used before. However:
+
+-   **Every AI-assisted code block must include a comment** identifying it as AI-assisted and briefly describing what you asked for (e.g., `# Claude: asked for help adapting the tune_grid workflow to a random forest spec`).
+-   **All written interpretation must be your own.** Do not use AI to generate your written responses to the questions below — these are graded primarily on your reasoning, not on the code that produced the results.
+
+### Grading
+
+Grading for this lab weights **interpretation and documentation more heavily than code correctness**. A working model with shallow interpretation will score lower than a model with minor implementation issues but clear, thoughtful commentary on what the results mean.
+
+------------------------------------------------------------------------
+
+### Tasks
+
+**1.** Select a third classification algorithm beyond Naive Bayes and Lasso (e.g., random forest, k-nearest neighbors, support vector machine, decision tree).  Report its cross-validated accuracy and ROC AUC.
+
+**2.** Identify the key hyperparameter(s) for your chosen algorithm. Tune at least one hyperparameter using cross-validation and select a final value. Briefly explain in plain language what the hyperparameter controls and why tuning it matters.
+
+**3.** Fit your final tuned model and evaluate it on the test set. Compare its accuracy and ROC AUC to the Naive Bayes and Lasso models from the demo. Which model performs best, and why do you think that is?
+
+**4.** Examine the confusion matrix for your tuned model. What does the confusion matrix tell you about how the model is handling the minority class? Is overall accuracy a good summary metric here? What would you prioritize — minimizing false negatives (missed fatalities) or false positives (false alarms) — and why?
