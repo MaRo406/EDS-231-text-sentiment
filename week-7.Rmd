@@ -56,7 +56,7 @@ By the end of this week, you will be able to:
 💻 R scripts used during class:
 
 [Lab5](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/Lab5.Rmd)
-
+[key-Lab5](https://github.com/MaRo406/EDS-231-text-sentiment/blob/main/Labs/key-Lab5.Rmd)
 ---
 
 ## 📂 Assignment
